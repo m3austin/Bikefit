@@ -56,6 +56,9 @@ export type AppSettings = {
   theme?: string;
 };
 
+/** A deleted fit's id, kept so a delete can propagate to the cloud (Flow 7). */
+export type TombstoneRow = { id: string; deletedAt: number };
+
 export const ACTIVE_DRAFT_ID = "active";
 export const PROFILE_ID = "me";
 export const SETTINGS_ID = "app";
@@ -73,6 +76,10 @@ async function makeDexie(): Promise<AppDb> {
     fits: "id, saved, createdAt, updatedAt",
     profile: "id",
     settings: "id",
+  });
+  // v2 adds local tombstones for cloud sync (Flow 7).
+  dexie.version(2).stores({
+    tombstones: "id, deletedAt",
   });
   // Dexie exposes a table accessor per store; the AppDb interface narrows it.
   return dexie as unknown as AppDb;
@@ -100,6 +107,7 @@ interface AppDb {
   fits: TableLike<StoredFit>;
   profile: TableLike<Profile>;
   settings: TableLike<AppSettings>;
+  tombstones: TableLike<TombstoneRow>;
   transaction<T>(mode: string, ...args: unknown[]): Promise<T>;
 }
 
@@ -139,6 +147,7 @@ class MemoryDb implements AppDb {
   fits = new MemoryTable<StoredFit>();
   profile = new MemoryTable<Profile>();
   settings = new MemoryTable<AppSettings>();
+  tombstones = new MemoryTable<TombstoneRow>();
   async transaction<T>(_mode: string, ...args: unknown[]): Promise<T> {
     const fn = args[args.length - 1] as () => Promise<T>;
     return fn();
@@ -228,7 +237,11 @@ export async function updateFit(
 }
 
 export async function deleteFit(id: string): Promise<void> {
-  await (await db()).fits.delete(id);
+  const d = await db();
+  await d.fits.delete(id);
+  // Record a tombstone so the delete can propagate to the cloud if the rider
+  // is (or later becomes) signed in. Harmless when signed out.
+  await d.tombstones.put({ id, deletedAt: Date.now() });
 }
 
 /** Saved fits (the garage), newest first (Flow 4). */
@@ -240,7 +253,31 @@ export async function listSavedFits(): Promise<StoredFit[]> {
 
 /** Write a fit exactly as given (used to restore after an undo). */
 export async function putFit(fit: StoredFit): Promise<void> {
-  await (await db()).fits.put(fit);
+  const d = await db();
+  await d.fits.put(fit);
+  // Restoring clears any tombstone so the fit is no longer marked deleted.
+  await d.tombstones.delete(fit.id);
+}
+
+// --- Tombstones & sync helpers ----------------------------------------------
+
+export async function listTombstones(): Promise<TombstoneRow[]> {
+  return (await db()).tombstones.toArray();
+}
+
+/** Apply a remote delete: drop the fit and record the remote's deletedAt. */
+export async function applyRemoteDelete(
+  id: string,
+  deletedAt: number,
+): Promise<void> {
+  const d = await db();
+  await d.fits.delete(id);
+  await d.tombstones.put({ id, deletedAt });
+}
+
+/** Drop a tombstone once its delete is confirmed on the remote. */
+export async function pruneTombstone(id: string): Promise<void> {
+  await (await db()).tombstones.delete(id);
 }
 
 // --- Profile & settings -----------------------------------------------------
@@ -306,5 +343,6 @@ export async function eraseAll(): Promise<void> {
     d.fits.clear(),
     d.profile.clear(),
     d.settings.clear(),
+    d.tombstones.clear(),
   ]);
 }
