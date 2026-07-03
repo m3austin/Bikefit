@@ -208,7 +208,7 @@ export function MeasurementWizard() {
         });
         await clearActiveDraft();
       }
-      router.push(`/fit/${id}`);
+      router.push(`/fit/${id}?reveal=1`);
     } catch {
       setCalculating(false);
     }

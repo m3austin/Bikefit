@@ -17,7 +17,7 @@ const NAV = [
  */
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b border-line bg-bg/80 backdrop-blur">
+    <header className="sticky top-0 z-10 border-b border-line bg-bg/80 backdrop-blur print:hidden">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"

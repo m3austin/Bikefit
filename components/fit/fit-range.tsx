@@ -1,3 +1,5 @@
+"use client";
+
 import {
   formatRangeText,
   formatValue,
@@ -5,6 +7,7 @@ import {
   unitWord,
 } from "@/lib/format";
 import type { Unit } from "@/lib/units";
+import { useCountUp } from "@/components/fit/use-count-up";
 
 export type FitRangeProps = {
   /** Optional caption above the range (e.g. "Recommended start"). */
@@ -16,6 +19,8 @@ export type FitRangeProps = {
   /** The rider's existing setting, if entered; marked separately. */
   current?: number;
   unit: Unit;
+  /** Count the start value up on mount (the results reveal). Default off. */
+  animate?: boolean;
 };
 
 function pct(value: number, low: number, high: number): number {
@@ -37,10 +42,13 @@ export function FitRange({
   start,
   current,
   unit,
+  animate = false,
 }: FitRangeProps) {
   const startPct = pct(start, low, high);
   const hasCurrent = typeof current === "number";
   const currentPct = hasCurrent ? pct(current, low, high) : 0;
+  // Headline start value counts up on reveal; the range bar geometry stays put.
+  const displayStart = useCountUp(start, animate);
 
   const label =
     `${caption}: ${formatValue(start, unit)} ${unitLabel(unit)}. ` +
@@ -55,7 +63,7 @@ export function FitRange({
         <figcaption className="flex flex-col gap-1">
           <span className="text-sm text-ink-muted">{caption}</span>
           <span className="measurement text-3xl font-semibold text-ink">
-            {formatValue(start, unit)}
+            {formatValue(displayStart, unit)}
             <span className="ml-1 text-base font-normal text-ink-muted">
               {unitLabel(unit)}
             </span>
