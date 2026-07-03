@@ -6,6 +6,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
+import { UnitProvider } from "@/components/unit-provider";
 import { AppHeader } from "@/components/app-header";
 
 export const metadata: Metadata = {
@@ -46,12 +47,14 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh bg-bg text-ink antialiased">
         <ThemeProvider>
-          <div className="flex min-h-dvh flex-col">
-            <AppHeader />
-            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-              {children}
-            </main>
-          </div>
+          <UnitProvider>
+            <div className="flex min-h-dvh flex-col">
+              <AppHeader />
+              <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+                {children}
+              </main>
+            </div>
+          </UnitProvider>
         </ThemeProvider>
       </body>
     </html>

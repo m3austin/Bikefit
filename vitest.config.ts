@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    setupFiles: ["./vitest.setup.ts"],
     // Unit tests use .test.*; Playwright specs (.spec.*) live in e2e/.
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**", "e2e/**", "playwright-report/**"],
