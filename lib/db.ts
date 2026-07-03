@@ -161,3 +161,76 @@ export async function updateFit(
 export async function deleteFit(id: string): Promise<void> {
   await db().fits.delete(id);
 }
+
+/** Saved fits (the garage), newest first (Flow 4). */
+export async function listSavedFits(): Promise<StoredFit[]> {
+  // `saved` is a boolean, not a valid IndexedDB key, so filter rather than index.
+  const all = await db().fits.toArray();
+  return all.filter((f) => f.saved).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** Write a fit exactly as given (used to restore after an undo). */
+export async function putFit(fit: StoredFit): Promise<void> {
+  await db().fits.put(fit);
+}
+
+// --- Profile & settings -----------------------------------------------------
+
+export async function getProfile(): Promise<Profile | undefined> {
+  return db().profile.get(PROFILE_ID);
+}
+
+export async function getSettings(): Promise<AppSettings | undefined> {
+  return db().settings.get(SETTINGS_ID);
+}
+
+/** Merge a settings patch (units/theme) so each field persists independently. */
+export async function saveSettings(
+  patch: Partial<Omit<AppSettings, "id">>,
+): Promise<void> {
+  const existing = await db().settings.get(SETTINGS_ID);
+  await db().settings.put({ ...existing, ...patch, id: SETTINGS_ID });
+}
+
+// --- Backup import / erase --------------------------------------------------
+
+/** Replace all fits and the profile (used by import "replace"). */
+export async function replaceData(params: {
+  fits: StoredFit[];
+  profile?: Profile;
+}): Promise<void> {
+  await db().transaction("rw", db().fits, db().profile, async () => {
+    await db().fits.clear();
+    await db().profile.clear();
+    if (params.fits.length) await db().fits.bulkPut(params.fits);
+    if (params.profile) await db().profile.put(params.profile);
+  });
+}
+
+/** Upsert fits and the profile without removing existing data (import "merge"). */
+export async function mergeData(params: {
+  fits: StoredFit[];
+  profile?: Profile;
+}): Promise<void> {
+  await db().transaction("rw", db().fits, db().profile, async () => {
+    if (params.fits.length) await db().fits.bulkPut(params.fits);
+    if (params.profile) await db().profile.put(params.profile);
+  });
+}
+
+/** True when any user data exists (drives the import merge/replace choice). */
+export async function hasAnyData(): Promise<boolean> {
+  const fits = await db().fits.count();
+  const profiles = await db().profile.count();
+  return fits > 0 || profiles > 0;
+}
+
+/** Wipe every table (erase everything, Flow 6). */
+export async function eraseAll(): Promise<void> {
+  await Promise.all([
+    db().drafts.clear(),
+    db().fits.clear(),
+    db().profile.clear(),
+    db().settings.clear(),
+  ]);
+}

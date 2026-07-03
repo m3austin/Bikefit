@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { isUnit, type Unit } from "@/lib/units";
+import { isPersistenceAvailable, saveSettings } from "@/lib/db";
 
 type UnitContextValue = {
   unit: Unit;
@@ -53,6 +54,8 @@ export function UnitProvider({ children }: { children: React.ReactNode }) {
       // Storage can be unavailable (private mode); the toggle still works
       // for the session via the dispatched event below.
     }
+    // Mirror to IndexedDB so it is captured in a backup (Flow 5).
+    if (isPersistenceAvailable()) void saveSettings({ units: next });
     window.dispatchEvent(new Event(UNIT_EVENT));
   }, []);
 

@@ -157,3 +157,40 @@ export function defaultFitName(bikeType: BikeType): string {
   const label = BIKE_OPTIONS.find((o) => o.value === bikeType)?.label ?? "Bike";
   return `${label} fit`;
 }
+
+/**
+ * Build a wizard draft from an existing fit's input for duplicate-and-edit
+ * (Flow 4): pre-filled and dropped straight onto the review step. Confirmed
+ * out-of-range values carry their caution so they are not re-challenged.
+ */
+export function draftFromInput(
+  input: FitInput,
+  cautions: MeasurementKey[],
+): {
+  bikeType: BikeType;
+  priority: Priority;
+  flexibility: Flexibility;
+  values: Partial<Record<MeasurementKey, number>>;
+  cautions: MeasurementKey[];
+  footSkipped: boolean;
+  stepIndex: number;
+} {
+  const m = input.measurements;
+  const values: Partial<Record<MeasurementKey, number>> = {
+    height: m.heightMm,
+    inseam: m.inseamMm,
+    torso: m.torsoMm,
+    arm: m.armMm,
+    shoulder: m.shoulderMm,
+  };
+  if (m.footMm !== undefined) values.foot = m.footMm;
+  return {
+    bikeType: input.bikeType,
+    priority: input.priority,
+    flexibility: input.flexibility,
+    values,
+    cautions,
+    footSkipped: m.footMm === undefined,
+    stepIndex: REVIEW_INDEX,
+  };
+}

@@ -10,6 +10,7 @@ import {
   resolveTheme,
   type Theme,
 } from "@/lib/theme";
+import { isPersistenceAvailable, saveSettings } from "@/lib/db";
 
 type ThemeContextValue = {
   theme: Theme;
@@ -95,6 +96,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Storage can be unavailable (private mode); theme still works in-session.
     }
+    // Mirror to IndexedDB so it is captured in a backup (Flow 5, PRD §7).
+    if (isPersistenceAvailable()) void saveSettings({ theme: next });
     window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
