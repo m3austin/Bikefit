@@ -1,0 +1,19 @@
+import { fileURLToPath } from "node:url";
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL(".", import.meta.url)),
+    },
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    // Unit tests use .test.*; Playwright specs (.spec.*) live in e2e/.
+    include: ["**/*.test.{ts,tsx}"],
+    exclude: ["node_modules/**", ".next/**", "e2e/**", "playwright-report/**"],
+  },
+});
