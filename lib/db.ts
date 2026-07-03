@@ -1,0 +1,147 @@
+/*
+ * The single gateway to IndexedDB (CLAUDE.md): components never touch Dexie
+ * directly, only these functions. Schema follows PRD §7: a single-row profile,
+ * saved fits (each an input + result snapshot), settings, plus a wizard draft
+ * for refresh-safe resume. All measurements are stored in integer mm.
+ */
+
+import Dexie, { type Table } from "dexie";
+
+import type {
+  BikeType,
+  FitInput,
+  FitResult,
+  Flexibility,
+  MeasurementKey,
+  Priority,
+} from "@/lib/engine";
+import type { Unit } from "@/lib/units";
+
+/** The in-progress wizard, persisted every step so a refresh resumes it. */
+export type WizardDraft = {
+  id: string; // singleton: ACTIVE_DRAFT_ID
+  bikeType?: BikeType;
+  priority?: Priority;
+  flexibility?: Flexibility;
+  /** Committed values in mm, keyed by measurement. */
+  values: Partial<Record<MeasurementKey, number>>;
+  /** Measurements the rider confirmed as unusual (carry a caution flag). */
+  cautions: MeasurementKey[];
+  /** True when the rider chose to skip the optional foot-length step. */
+  footSkipped?: boolean;
+  stepIndex: number;
+  updatedAt: number;
+};
+
+/** A saved fit: input + result snapshot, so it never changes when the engine does. */
+export type StoredFit = {
+  id: string;
+  name: string;
+  input: FitInput;
+  result: FitResult;
+  /** False until the rider explicitly saves it to the garage (Flow 3). */
+  saved: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type Profile = {
+  id: string; // singleton: PROFILE_ID
+  values: Partial<Record<MeasurementKey, number>>;
+  flexibility?: Flexibility;
+  updatedAt: number;
+};
+
+export type AppSettings = {
+  id: string; // singleton: SETTINGS_ID
+  units?: Unit;
+  theme?: string;
+};
+
+export const ACTIVE_DRAFT_ID = "active";
+export const PROFILE_ID = "me";
+export const SETTINGS_ID = "app";
+
+class BikeFitDatabase extends Dexie {
+  drafts!: Table<WizardDraft, string>;
+  fits!: Table<StoredFit, string>;
+  profile!: Table<Profile, string>;
+  settings!: Table<AppSettings, string>;
+
+  constructor() {
+    super("bikefit");
+    this.version(1).stores({
+      drafts: "id, updatedAt",
+      fits: "id, saved, createdAt, updatedAt",
+      profile: "id",
+      settings: "id",
+    });
+  }
+}
+
+/*
+ * Lazily construct the Dexie instance so importing this module never touches
+ * IndexedDB on the server (it is unavailable there). Callers run in effects /
+ * event handlers on the client.
+ */
+let dbInstance: BikeFitDatabase | null = null;
+
+function db(): BikeFitDatabase {
+  if (typeof indexedDB === "undefined") {
+    throw new Error("IndexedDB is unavailable in this environment");
+  }
+  dbInstance ??= new BikeFitDatabase();
+  return dbInstance;
+}
+
+/** True when local persistence is available (false in private-mode edge cases). */
+export function isPersistenceAvailable(): boolean {
+  return typeof indexedDB !== "undefined";
+}
+
+// --- Wizard draft -----------------------------------------------------------
+
+export async function getActiveDraft(): Promise<WizardDraft | undefined> {
+  return db().drafts.get(ACTIVE_DRAFT_ID);
+}
+
+export async function saveActiveDraft(
+  draft: Omit<WizardDraft, "id" | "updatedAt">,
+): Promise<void> {
+  await db().drafts.put({
+    ...draft,
+    id: ACTIVE_DRAFT_ID,
+    updatedAt: Date.now(),
+  });
+}
+
+export async function clearActiveDraft(): Promise<void> {
+  await db().drafts.delete(ACTIVE_DRAFT_ID);
+}
+
+// --- Fits -------------------------------------------------------------------
+
+export async function createFit(params: {
+  id: string;
+  name: string;
+  input: FitInput;
+  result: FitResult;
+  saved?: boolean;
+}): Promise<StoredFit> {
+  const now = Date.now();
+  const fit: StoredFit = {
+    id: params.id,
+    name: params.name,
+    input: params.input,
+    result: params.result,
+    saved: params.saved ?? false,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await db().fits.put(fit);
+  return fit;
+}
+
+export async function getFit(id: string): Promise<StoredFit | undefined> {
+  return db().fits.get(id);
+}

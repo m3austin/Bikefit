@@ -44,6 +44,9 @@ export type MeasurementInputProps = {
   /** Stepper increment in mm. */
   stepMm?: number;
   onChange?: (result: MeasurementResult) => void;
+  /** Fired when the rider presses Enter, with the freshly committed result. */
+  onEnter?: (result: MeasurementResult) => void;
+  autoFocus?: boolean;
 };
 
 type State = { text: string; status: MeasurementStatus; mm: number | null };
@@ -141,13 +144,56 @@ export function MeasurementInput(props: MeasurementInputProps) {
     exampleMm,
     stepMm = 5,
     onChange,
+    onEnter,
+    autoFocus,
   } = props;
 
   const reducer = React.useMemo(
     () => makeReducer(unit, minMm, maxMm, stepMm),
     [unit, minMm, maxMm, stepMm],
   );
-  const [state, dispatch] = React.useReducer(reducer, props, initState);
+  const [state, setState] = React.useState<State>(() => initState(props));
+
+  // A ref mirror of state so transitions compute from the freshest value even
+  // when several fire in one tick.
+  const stateRef = React.useRef(state);
+  const onChangeRef = React.useRef(onChange);
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+
+  const result = React.useCallback(
+    (next: State): MeasurementResult => ({
+      mm: next.mm,
+      status: next.status,
+      caution: next.status === "confirmed",
+    }),
+    [],
+  );
+
+  /*
+   * Apply a transition: compute the next state, render it, and report upward
+   * synchronously (not in an effect) so a parent gating on the result sees it
+   * within the same event, before a following click or submit.
+   */
+  const run = React.useCallback(
+    (action: Action): State => {
+      const next = reducer(stateRef.current, action);
+      stateRef.current = next;
+      setState(next);
+      onChangeRef.current?.(result(next));
+      return next;
+    },
+    [reducer, result],
+  );
+
+  // Report the initial state once so the parent knows where it starts.
+  const mounted = React.useRef(false);
+  React.useEffect(() => {
+    if (mounted.current) return;
+    mounted.current = true;
+    onChangeRef.current?.(result(stateRef.current));
+  }, [result]);
 
   // Re-render a committed value in place when the unit changes.
   const firstUnit = React.useRef(true);
@@ -156,22 +202,8 @@ export function MeasurementInput(props: MeasurementInputProps) {
       firstUnit.current = false;
       return;
     }
-    dispatch({ type: "reformat" });
-  }, [unit]);
-
-  // Report changes upward. Kept in a ref so a new onChange identity per render
-  // does not re-fire the effect.
-  const onChangeRef = React.useRef(onChange);
-  React.useEffect(() => {
-    onChangeRef.current = onChange;
-  });
-  React.useEffect(() => {
-    onChangeRef.current?.({
-      mm: state.mm,
-      status: state.status,
-      caution: state.status === "confirmed",
-    });
-  }, [state.mm, state.status]);
+    run({ type: "reformat" });
+  }, [unit, run]);
 
   const helpId = `${id}${HELP_ID_SUFFIX}`;
   const isChallenge = state.status === "challenge";
@@ -205,7 +237,7 @@ export function MeasurementInput(props: MeasurementInputProps) {
           size="icon"
           aria-label={`Decrease ${label}`}
           className="size-10 text-ink-muted"
-          onClick={() => dispatch({ type: "step", delta: -1 })}
+          onClick={() => run({ type: "step", delta: -1 })}
         >
           <Minus />
         </Button>
@@ -215,6 +247,7 @@ export function MeasurementInput(props: MeasurementInputProps) {
           type="text"
           inputMode="decimal"
           autoComplete="off"
+          autoFocus={autoFocus}
           value={state.text}
           aria-invalid={invalid || undefined}
           aria-describedby={
@@ -222,10 +255,12 @@ export function MeasurementInput(props: MeasurementInputProps) {
           }
           className="measurement w-full min-w-0 flex-1 bg-transparent text-center text-lg text-ink outline-none placeholder:text-ink-muted"
           placeholder="0.0"
-          onChange={(e) => dispatch({ type: "type", text: e.target.value })}
-          onBlur={() => dispatch({ type: "commit" })}
+          onChange={(e) => run({ type: "type", text: e.target.value })}
+          onBlur={() => run({ type: "commit" })}
           onKeyDown={(e) => {
-            if (e.key === "Enter") dispatch({ type: "commit" });
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            onEnter?.(result(run({ type: "commit" })));
           }}
         />
 
@@ -239,7 +274,7 @@ export function MeasurementInput(props: MeasurementInputProps) {
           size="icon"
           aria-label={`Increase ${label}`}
           className="size-10 text-ink-muted"
-          onClick={() => dispatch({ type: "step", delta: 1 })}
+          onClick={() => run({ type: "step", delta: 1 })}
         >
           <Plus />
         </Button>
@@ -263,7 +298,7 @@ export function MeasurementInput(props: MeasurementInputProps) {
               variant="outline"
               size="sm"
               className="border-warn text-warn hover:bg-warn/10"
-              onClick={() => dispatch({ type: "confirm" })}
+              onClick={() => run({ type: "confirm" })}
             >
               Yes, that&apos;s right
             </Button>
