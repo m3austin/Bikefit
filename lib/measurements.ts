@@ -1,22 +1,19 @@
 /*
- * The body-measurement catalog: the single source for each measurement's label,
- * plausible range (PRD §5, stored in mm), how-to guidance, and the copy shown
- * when a value is unusual. Ranges are challenged, never hard-blocked (Flow 2).
- * Reused by MeasurementInput, MeasureGuide, and the wizard.
+ * The body-measurement catalog: the UI copy for each measurement (label,
+ * how-to guidance, the copy shown when a value is unusual). The plausible
+ * ranges come from the engine (PRD §5), so the wizard challenges at exactly the
+ * threshold the engine flags as caution. Reused by MeasurementInput,
+ * MeasureGuide, and the wizard.
  */
 
-export type MeasurementKey =
-  | "height"
-  | "inseam"
-  | "torso"
-  | "arm"
-  | "shoulder"
-  | "foot";
+import { PLAUSIBLE_RANGES, type MeasurementKey } from "@/lib/engine";
+
+export type { MeasurementKey };
 
 export type MeasurementDef = {
   key: MeasurementKey;
   label: string;
-  /** Plausible range in mm (PRD §5). Outside this range triggers a challenge. */
+  /** Plausible range in mm (PRD §5), sourced from the engine. */
   minMm: number;
   maxMm: number;
   optional?: boolean;
@@ -36,8 +33,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   height: {
     key: "height",
     label: "Height",
-    minMm: 1400,
-    maxMm: 2100,
+    minMm: PLAUSIBLE_RANGES.height.minMm,
+    maxMm: PLAUSIBLE_RANGES.height.maxMm,
     howMeasured: "Standing tall and barefoot, floor to the top of your head.",
     steps: [
       "Stand barefoot with your back to a wall, heels together.",
@@ -51,8 +48,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   inseam: {
     key: "inseam",
     label: "Inseam",
-    minMm: 600,
-    maxMm: 1000,
+    minMm: PLAUSIBLE_RANGES.inseam.minMm,
+    maxMm: PLAUSIBLE_RANGES.inseam.maxMm,
     howMeasured: "Barefoot, a book snug against your crotch, floor to the spine.",
     steps: [
       "Stand barefoot with your back against a wall.",
@@ -66,8 +63,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   torso: {
     key: "torso",
     label: "Torso length",
-    minMm: 450,
-    maxMm: 750,
+    minMm: PLAUSIBLE_RANGES.torso.minMm,
+    maxMm: PLAUSIBLE_RANGES.torso.maxMm,
     howMeasured: "From the sternal notch down to a pubic-bone reference point.",
     steps: [
       "Find the sternal notch, the dip at the base of your throat.",
@@ -81,8 +78,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   arm: {
     key: "arm",
     label: "Arm length",
-    minMm: 500,
-    maxMm: 800,
+    minMm: PLAUSIBLE_RANGES.arm.minMm,
+    maxMm: PLAUSIBLE_RANGES.arm.maxMm,
     howMeasured: "From the shoulder bone tip (acromion) to the wrist crease.",
     steps: [
       "Let your arm hang relaxed at your side.",
@@ -96,8 +93,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   shoulder: {
     key: "shoulder",
     label: "Shoulder width",
-    minMm: 320,
-    maxMm: 500,
+    minMm: PLAUSIBLE_RANGES.shoulder.minMm,
+    maxMm: PLAUSIBLE_RANGES.shoulder.maxMm,
     howMeasured: "Across the back, from one shoulder bone tip to the other.",
     steps: [
       "Find the bony tip (acromion) on each shoulder.",
@@ -111,8 +108,8 @@ export const MEASUREMENTS: Record<MeasurementKey, MeasurementDef> = {
   foot: {
     key: "foot",
     label: "Foot length",
-    minMm: 220,
-    maxMm: 330,
+    minMm: PLAUSIBLE_RANGES.foot.minMm,
+    maxMm: PLAUSIBLE_RANGES.foot.maxMm,
     optional: true,
     howMeasured: "Barefoot, heel against a wall, to the tip of the longest toe.",
     steps: [

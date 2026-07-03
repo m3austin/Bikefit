@@ -16,5 +16,18 @@ export default defineConfig({
     // Unit tests use .test.*; Playwright specs (.spec.*) live in e2e/.
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**", "e2e/**", "playwright-report/**"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      // The engine is the contract: hold it to 100% branch coverage (PRD §9).
+      include: ["lib/engine/**/*.ts"],
+      exclude: ["lib/engine/**/*.test.ts"],
+      thresholds: {
+        branches: 100,
+        functions: 100,
+        lines: 100,
+        statements: 100,
+      },
+    },
   },
 });
