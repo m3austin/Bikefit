@@ -138,8 +138,34 @@ test.describe("measurement wizard", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Continue" }).click(); // priority
     await fillAndEnter(page, "Height", "178");
-    // Now on the inseam step.
+    // Now on the inseam step (index 3).
     await expect(textbox(page, "Inseam")).toBeVisible();
+
+    // Wait until the draft is actually persisted before reloading, so the
+    // async IndexedDB write is not raced by the reload under parallel load.
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            new Promise<number>((resolve) => {
+              const req = indexedDB.open("bikefit");
+              req.onsuccess = () => {
+                try {
+                  const store = req.result
+                    .transaction("drafts", "readonly")
+                    .objectStore("drafts");
+                  const get = store.get("active");
+                  get.onsuccess = () => resolve(get.result?.stepIndex ?? -1);
+                  get.onerror = () => resolve(-1);
+                } catch {
+                  resolve(-1);
+                }
+              };
+              req.onerror = () => resolve(-1);
+            }),
+        ),
+      )
+      .toBe(3);
 
     await page.reload();
 
