@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
 
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { MeasurementWizard } from "@/components/fit/measurement-wizard";
 
 export const metadata: Metadata = { title: "New fit" };
 
 export default function NewFitPage() {
   return (
-    <PagePlaceholder
-      eyebrow="Measurement wizard"
-      title="New fit"
-      description="A guided, one-question-per-screen wizard captures your body measurements and bike type, then hands them to the fit engine."
-      phase="Phase 3 target"
-      cta={{ href: "/", label: "Back home" }}
-    />
+    <div className="flex flex-col gap-2">
+      <p className="measurement text-sm font-medium uppercase tracking-wide text-accent">
+        Measurement wizard
+      </p>
+      <MeasurementWizard />
+    </div>
   );
 }
