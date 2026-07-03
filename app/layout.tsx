@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeScript } from "@/components/theme-script";
 import { UnitProvider } from "@/components/unit-provider";
 import { ToastProvider } from "@/components/toast-provider";
+import { SyncProvider } from "@/components/sync-provider";
 import { AppHeader } from "@/components/app-header";
 import { AppStatus } from "@/components/app-status";
 
@@ -71,6 +72,7 @@ export default function RootLayout({
         <ThemeProvider>
           <UnitProvider>
             <ToastProvider>
+              <SyncProvider>
               <div className="flex min-h-dvh flex-col">
                 <AppHeader />
                 <AppStatus />
@@ -78,6 +80,7 @@ export default function RootLayout({
                   {children}
                 </main>
               </div>
+              </SyncProvider>
             </ToastProvider>
           </UnitProvider>
         </ThemeProvider>

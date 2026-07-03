@@ -1,15 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Toast as ToastPrimitive } from "radix-ui";
-
-import { Button } from "@/components/ui/button";
-import {
-  ToastDescription,
-  ToastRoot,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast";
+import dynamic from "next/dynamic";
 
 export type ToastAction = { label: string; onClick: () => void };
 
@@ -27,6 +19,12 @@ type ToastContextValue = { toast: (options: ToastOptions) => void };
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);
 
+// The Radix render tree loads only once a toast is queued, so radix-ui Toast
+// stays out of the first-load bundle (PRD §8).
+const ToastRenderer = dynamic(() =>
+  import("@/components/ui/toast-renderer").then((m) => m.ToastRenderer),
+);
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastItem[]>([]);
 
@@ -42,37 +40,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ToastContext.Provider value={value}>
-      <ToastPrimitive.Provider swipeDirection="right">
-        {children}
-        {toasts.map((t) => (
-          <ToastRoot
-            key={t.id}
-            duration={t.durationMs ?? 6000}
-            onOpenChange={(open) => {
-              if (!open) remove(t.id);
-            }}
-          >
-            <div className="flex flex-col gap-0.5">
-              <ToastTitle>{t.title}</ToastTitle>
-              {t.description ? (
-                <ToastDescription>{t.description}</ToastDescription>
-              ) : null}
-            </div>
-            {t.action ? (
-              <ToastPrimitive.Action altText={t.action.label} asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={t.action.onClick}
-                >
-                  {t.action.label}
-                </Button>
-              </ToastPrimitive.Action>
-            ) : null}
-          </ToastRoot>
-        ))}
-        <ToastViewport />
-      </ToastPrimitive.Provider>
+      {children}
+      {toasts.length > 0 ? (
+        <ToastRenderer toasts={toasts} onDismiss={remove} />
+      ) : null}
     </ToastContext.Provider>
   );
 }

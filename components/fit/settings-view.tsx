@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { UnitToggle } from "@/components/fit/unit-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountSection } from "@/components/fit/account-section";
 import { useToast } from "@/components/toast-provider";
 import { ENGINE_VERSION } from "@/lib/engine";
 import { isTheme } from "@/lib/theme";
@@ -170,6 +171,13 @@ export function SettingsView() {
 
       <Section title="Theme" description="Light, dark, or match your system.">
         <ThemeToggle />
+      </Section>
+
+      <Section
+        title="Account and sync"
+        description="Optional. Sync your saved fits across devices. BikeFit works fully without an account."
+      >
+        <AccountSection />
       </Section>
 
       <Section

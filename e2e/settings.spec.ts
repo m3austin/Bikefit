@@ -93,7 +93,7 @@ test.describe("settings data controls", () => {
     await expect(
       page.getByRole("button", { name: "Erase everything" }),
     ).toBeDisabled();
-    await page.getByRole("textbox").first().fill("erase");
+    await page.locator("#erase-confirm").fill("erase");
     await page.getByRole("button", { name: "Erase everything" }).click();
     await page.waitForURL(/\/$/);
     await expect(
