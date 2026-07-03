@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Info, Printer, RotateCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,23 +21,22 @@ import { ResultCards } from "@/components/fit/result-cards";
 import { FitSheet } from "@/components/fit/fit-sheet";
 import { useUnit } from "@/components/unit-provider";
 import { useToast } from "@/components/toast-provider";
-import {
-  deleteFit,
-  getFit,
-  isPersistenceAvailable,
-  updateFit,
-  type StoredFit,
-} from "@/lib/db";
+import { deleteFit, getFit, updateFit, type StoredFit } from "@/lib/db";
 import { MEASUREMENTS } from "@/lib/measurements";
 import { DISCLAIMER } from "@/lib/results-copy";
 import { defaultFitName } from "@/lib/wizard";
 
 type LoadState = "loading" | "found" | "notfound";
 
-export function FitResults({ id }: { id: string }) {
+export function FitResults() {
   const router = useRouter();
   const { unit } = useUnit();
   const { toast } = useToast();
+
+  // Read the id from the live URL rather than a server param, so a cached
+  // /fit/* shell can render any fit offline (Flow 8).
+  const pathname = usePathname();
+  const id = pathname.split("/").pop() ?? "";
 
   const [loadState, setLoadState] = React.useState<LoadState>("loading");
   const [fit, setFit] = React.useState<StoredFit | null>(null);
@@ -57,10 +56,6 @@ export function FitResults({ id }: { id: string }) {
     ).matches;
 
     async function load() {
-      if (!isPersistenceAvailable()) {
-        if (active) setLoadState("notfound");
-        return;
-      }
       const found = await getFit(id);
       if (!active) return;
       if (found) {
@@ -102,7 +97,7 @@ export function FitResults({ id }: { id: string }) {
 
   const handleStartOver = React.useCallback(async () => {
     setStartOverOpen(false);
-    if (fit && !fit.saved && isPersistenceAvailable()) {
+    if (fit && !fit.saved) {
       await deleteFit(id);
     }
     router.push("/fit/new");

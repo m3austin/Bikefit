@@ -18,7 +18,6 @@ import { useConfirmDelete } from "@/components/fit/use-confirm-delete";
 import { useUnit } from "@/components/unit-provider";
 import {
   deleteFit,
-  isPersistenceAvailable,
   listSavedFits,
   putFit,
   saveActiveDraft,
@@ -52,13 +51,6 @@ export function SavedFits() {
   React.useEffect(() => {
     let active = true;
     async function load() {
-      if (!isPersistenceAvailable()) {
-        if (active) {
-          setFits([]);
-          setLoadState("ready");
-        }
-        return;
-      }
       try {
         const saved = await listSavedFits();
         if (active) {

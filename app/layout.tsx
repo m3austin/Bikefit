@@ -9,15 +9,36 @@ import { ThemeScript } from "@/components/theme-script";
 import { UnitProvider } from "@/components/unit-provider";
 import { ToastProvider } from "@/components/toast-provider";
 import { AppHeader } from "@/components/app-header";
+import { AppStatus } from "@/components/app-status";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bikefit.vercel.app";
+const DESCRIPTION =
+  "A free, local-first starting bike fit from your body measurements. No account, no ads, nothing to install.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "BikeFit",
+    default: "BikeFit, a free starting bike fit from your measurements",
     template: "%s | BikeFit",
   },
-  description:
-    "A free, local-first starting bike fit from your body measurements. No account, no ads, nothing to install.",
+  description: DESCRIPTION,
   applicationName: "BikeFit",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "BikeFit",
+    title: "BikeFit, a free starting bike fit from your measurements",
+    description: DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BikeFit",
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
@@ -52,6 +73,7 @@ export default function RootLayout({
             <ToastProvider>
               <div className="flex min-h-dvh flex-col">
                 <AppHeader />
+                <AppStatus />
                 <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
                   {children}
                 </main>

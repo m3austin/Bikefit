@@ -1,0 +1,14 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BikeFit">
+  <rect width="512" height="512" rx="112" fill="#3DDC97" />
+  <g fill="none" stroke="#062B1D" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="152" cy="346" r="74" />
+    <circle cx="360" cy="346" r="74" />
+    <path d="M256 346 L232 214" />
+    <path d="M232 214 L346 214" />
+    <path d="M256 346 L346 214" />
+    <path d="M346 214 L360 346" />
+    <path d="M256 346 L152 346" />
+    <path d="M232 214 L152 346" />
+    <path d="M346 214 L384 196" />
+  </g>
+</svg>

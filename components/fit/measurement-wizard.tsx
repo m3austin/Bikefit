@@ -22,7 +22,6 @@ import {
   clearActiveDraft,
   createFit,
   getActiveDraft,
-  isPersistenceAvailable,
   saveActiveDraft,
 } from "@/lib/db";
 import {
@@ -76,10 +75,6 @@ export function MeasurementWizard() {
   React.useEffect(() => {
     let active = true;
     async function load() {
-      if (!isPersistenceAvailable()) {
-        setHydrated(true);
-        return;
-      }
       const draft = await getActiveDraft();
       if (!active) return;
       if (draft) {
@@ -105,7 +100,7 @@ export function MeasurementWizard() {
 
   // Persist the draft on every change (Flow 1: refresh-safe on every step).
   React.useEffect(() => {
-    if (!hydrated || !isPersistenceAvailable()) return;
+    if (!hydrated) return;
     void saveActiveDraft({
       bikeType: data.bikeType,
       priority: data.priority,
@@ -198,17 +193,23 @@ export function MeasurementWizard() {
       const input = buildFitInput(data);
       const id = crypto.randomUUID();
       const result = computeFit(input, new Date().toISOString());
-      if (isPersistenceAvailable()) {
-        await createFit({
-          id,
-          name: defaultFitName(input.bikeType),
-          input,
-          result,
-          saved: false,
-        });
-        await clearActiveDraft();
+      await createFit({
+        id,
+        name: defaultFitName(input.bikeType),
+        input,
+        result,
+        saved: false,
+      });
+      await clearActiveDraft();
+      const target = `/fit/${id}?reveal=1`;
+      // Offline, a soft navigation would need an uncached RSC fetch. A hard
+      // navigation lets the service worker serve the cached /fit/* shell, which
+      // reads the id from the URL and loads the fit from storage (Flow 8).
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        window.location.assign(target);
+      } else {
+        router.push(target);
       }
-      router.push(`/fit/${id}?reveal=1`);
     } catch {
       setCalculating(false);
     }
@@ -251,6 +252,12 @@ export function MeasurementWizard() {
         onStepSelect={setStepIndex}
       />
 
+      {/* Keyed on the step so each screen transitions in (200ms, §2.4);
+          motion-safe only, so reduced-motion gets an instant swap. */}
+      <div
+        key={stepIndex}
+        className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200"
+      >
       {step.kind === "review" ? (
         <ReviewStep
           data={data}
@@ -290,6 +297,7 @@ export function MeasurementWizard() {
           </div>
         </div>
       )}
+      </div>
 
       <div className="sticky bottom-0 -mx-4 border-t border-line bg-bg/90 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <div className="mx-auto flex w-full max-w-5xl items-center gap-3">

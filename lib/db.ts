@@ -5,8 +5,6 @@
  * for refresh-safe resume. All measurements are stored in integer mm.
  */
 
-import Dexie, { type Table } from "dexie";
-
 import type {
   BikeType,
   FitInput,
@@ -62,36 +60,106 @@ export const ACTIVE_DRAFT_ID = "active";
 export const PROFILE_ID = "me";
 export const SETTINGS_ID = "app";
 
-class BikeFitDatabase extends Dexie {
-  drafts!: Table<WizardDraft, string>;
-  fits!: Table<StoredFit, string>;
-  profile!: Table<Profile, string>;
-  settings!: Table<AppSettings, string>;
+/*
+ * Dexie is loaded on demand (dynamic import) rather than at module load, so it
+ * stays out of the landing's first-load JS budget (PRD §8). It is pulled in the
+ * first time a db function runs, which is always inside an effect or handler.
+ */
+async function makeDexie(): Promise<AppDb> {
+  const { default: Dexie } = await import("dexie");
+  const dexie = new Dexie("bikefit");
+  dexie.version(1).stores({
+    drafts: "id, updatedAt",
+    fits: "id, saved, createdAt, updatedAt",
+    profile: "id",
+    settings: "id",
+  });
+  // Dexie exposes a table accessor per store; the AppDb interface narrows it.
+  return dexie as unknown as AppDb;
+}
 
-  constructor() {
-    super("bikefit");
-    this.version(1).stores({
-      drafts: "id, updatedAt",
-      fits: "id, saved, createdAt, updatedAt",
-      profile: "id",
-      settings: "id",
-    });
+/*
+ * The minimal table/database surface this module uses. Both the Dexie backend
+ * and the in-memory fallback satisfy it, so the access functions below are
+ * written once against this interface.
+ */
+type Row = { id: string };
+
+interface TableLike<T extends Row> {
+  get(id: string): Promise<T | undefined>;
+  put(item: T): Promise<unknown>;
+  delete(id: string): Promise<void>;
+  toArray(): Promise<T[]>;
+  count(): Promise<number>;
+  clear(): Promise<void>;
+  bulkPut(items: T[]): Promise<unknown>;
+}
+
+interface AppDb {
+  drafts: TableLike<WizardDraft>;
+  fits: TableLike<StoredFit>;
+  profile: TableLike<Profile>;
+  settings: TableLike<AppSettings>;
+  transaction<T>(mode: string, ...args: unknown[]): Promise<T>;
+}
+
+/*
+ * In-memory fallback (Flow 8): when IndexedDB is unavailable (a private-mode
+ * edge case), the app still works for the session, it just does not persist.
+ * A banner tells the rider so.
+ */
+class MemoryTable<T extends Row> implements TableLike<T> {
+  private rows = new Map<string, T>();
+  async get(id: string) {
+    return this.rows.get(id);
+  }
+  async put(item: T) {
+    this.rows.set(item.id, item);
+    return item.id;
+  }
+  async delete(id: string) {
+    this.rows.delete(id);
+  }
+  async toArray() {
+    return [...this.rows.values()];
+  }
+  async count() {
+    return this.rows.size;
+  }
+  async clear() {
+    this.rows.clear();
+  }
+  async bulkPut(items: T[]) {
+    for (const item of items) this.rows.set(item.id, item);
+  }
+}
+
+class MemoryDb implements AppDb {
+  drafts = new MemoryTable<WizardDraft>();
+  fits = new MemoryTable<StoredFit>();
+  profile = new MemoryTable<Profile>();
+  settings = new MemoryTable<AppSettings>();
+  async transaction<T>(_mode: string, ...args: unknown[]): Promise<T> {
+    const fn = args[args.length - 1] as () => Promise<T>;
+    return fn();
   }
 }
 
 /*
- * Lazily construct the Dexie instance so importing this module never touches
+ * Lazily construct the backend so importing this module never touches
  * IndexedDB on the server (it is unavailable there). Callers run in effects /
  * event handlers on the client.
  */
-let dbInstance: BikeFitDatabase | null = null;
+let dexiePromise: Promise<AppDb> | null = null;
+let memoryInstance: MemoryDb | null = null;
 
-function db(): BikeFitDatabase {
-  if (typeof indexedDB === "undefined") {
-    throw new Error("IndexedDB is unavailable in this environment");
+function db(): Promise<AppDb> {
+  if (isPersistenceAvailable()) {
+    dexiePromise ??= makeDexie();
+    return dexiePromise;
   }
-  dbInstance ??= new BikeFitDatabase();
-  return dbInstance;
+  memoryInstance ??= new MemoryDb();
+  return Promise.resolve(memoryInstance);
 }
 
 /** True when local persistence is available (false in private-mode edge cases). */
@@ -102,13 +170,13 @@ export function isPersistenceAvailable(): boolean {
 // --- Wizard draft -----------------------------------------------------------
 
 export async function getActiveDraft(): Promise<WizardDraft | undefined> {
-  return db().drafts.get(ACTIVE_DRAFT_ID);
+  return (await db()).drafts.get(ACTIVE_DRAFT_ID);
 }
 
 export async function saveActiveDraft(
   draft: Omit<WizardDraft, "id" | "updatedAt">,
 ): Promise<void> {
-  await db().drafts.put({
+  await (await db()).drafts.put({
     ...draft,
     id: ACTIVE_DRAFT_ID,
     updatedAt: Date.now(),
@@ -116,7 +184,7 @@ export async function saveActiveDraft(
 }
 
 export async function clearActiveDraft(): Promise<void> {
-  await db().drafts.delete(ACTIVE_DRAFT_ID);
+  await (await db()).drafts.delete(ACTIVE_DRAFT_ID);
 }
 
 // --- Fits -------------------------------------------------------------------
@@ -138,12 +206,12 @@ export async function createFit(params: {
     createdAt: now,
     updatedAt: now,
   };
-  await db().fits.put(fit);
+  await (await db()).fits.put(fit);
   return fit;
 }
 
 export async function getFit(id: string): Promise<StoredFit | undefined> {
-  return db().fits.get(id);
+  return (await db()).fits.get(id);
 }
 
 /** Merge a patch into a fit and bump updatedAt. Returns the updated fit. */
@@ -151,45 +219,47 @@ export async function updateFit(
   id: string,
   patch: Partial<Pick<StoredFit, "name" | "saved">>,
 ): Promise<StoredFit | undefined> {
-  const existing = await db().fits.get(id);
+  const d = await db();
+  const existing = await d.fits.get(id);
   if (!existing) return undefined;
   const updated: StoredFit = { ...existing, ...patch, updatedAt: Date.now() };
-  await db().fits.put(updated);
+  await d.fits.put(updated);
   return updated;
 }
 
 export async function deleteFit(id: string): Promise<void> {
-  await db().fits.delete(id);
+  await (await db()).fits.delete(id);
 }
 
 /** Saved fits (the garage), newest first (Flow 4). */
 export async function listSavedFits(): Promise<StoredFit[]> {
   // `saved` is a boolean, not a valid IndexedDB key, so filter rather than index.
-  const all = await db().fits.toArray();
+  const all = await (await db()).fits.toArray();
   return all.filter((f) => f.saved).sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /** Write a fit exactly as given (used to restore after an undo). */
 export async function putFit(fit: StoredFit): Promise<void> {
-  await db().fits.put(fit);
+  await (await db()).fits.put(fit);
 }
 
 // --- Profile & settings -----------------------------------------------------
 
 export async function getProfile(): Promise<Profile | undefined> {
-  return db().profile.get(PROFILE_ID);
+  return (await db()).profile.get(PROFILE_ID);
 }
 
 export async function getSettings(): Promise<AppSettings | undefined> {
-  return db().settings.get(SETTINGS_ID);
+  return (await db()).settings.get(SETTINGS_ID);
 }
 
 /** Merge a settings patch (units/theme) so each field persists independently. */
 export async function saveSettings(
   patch: Partial<Omit<AppSettings, "id">>,
 ): Promise<void> {
-  const existing = await db().settings.get(SETTINGS_ID);
-  await db().settings.put({ ...existing, ...patch, id: SETTINGS_ID });
+  const d = await db();
+  const existing = await d.settings.get(SETTINGS_ID);
+  await d.settings.put({ ...existing, ...patch, id: SETTINGS_ID });
 }
 
 // --- Backup import / erase --------------------------------------------------
@@ -199,11 +269,12 @@ export async function replaceData(params: {
   fits: StoredFit[];
   profile?: Profile;
 }): Promise<void> {
-  await db().transaction("rw", db().fits, db().profile, async () => {
-    await db().fits.clear();
-    await db().profile.clear();
-    if (params.fits.length) await db().fits.bulkPut(params.fits);
-    if (params.profile) await db().profile.put(params.profile);
+  const d = await db();
+  await d.transaction("rw", d.fits, d.profile, async () => {
+    await d.fits.clear();
+    await d.profile.clear();
+    if (params.fits.length) await d.fits.bulkPut(params.fits);
+    if (params.profile) await d.profile.put(params.profile);
   });
 }
 
@@ -212,25 +283,28 @@ export async function mergeData(params: {
   fits: StoredFit[];
   profile?: Profile;
 }): Promise<void> {
-  await db().transaction("rw", db().fits, db().profile, async () => {
-    if (params.fits.length) await db().fits.bulkPut(params.fits);
-    if (params.profile) await db().profile.put(params.profile);
+  const d = await db();
+  await d.transaction("rw", d.fits, d.profile, async () => {
+    if (params.fits.length) await d.fits.bulkPut(params.fits);
+    if (params.profile) await d.profile.put(params.profile);
   });
 }
 
 /** True when any user data exists (drives the import merge/replace choice). */
 export async function hasAnyData(): Promise<boolean> {
-  const fits = await db().fits.count();
-  const profiles = await db().profile.count();
+  const d = await db();
+  const fits = await d.fits.count();
+  const profiles = await d.profile.count();
   return fits > 0 || profiles > 0;
 }
 
 /** Wipe every table (erase everything, Flow 6). */
 export async function eraseAll(): Promise<void> {
+  const d = await db();
   await Promise.all([
-    db().drafts.clear(),
-    db().fits.clear(),
-    db().profile.clear(),
-    db().settings.clear(),
+    d.drafts.clear(),
+    d.fits.clear(),
+    d.profile.clear(),
+    d.settings.clear(),
   ]);
 }
