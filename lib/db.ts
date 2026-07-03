@@ -145,3 +145,19 @@ export async function createFit(params: {
 export async function getFit(id: string): Promise<StoredFit | undefined> {
   return db().fits.get(id);
 }
+
+/** Merge a patch into a fit and bump updatedAt. Returns the updated fit. */
+export async function updateFit(
+  id: string,
+  patch: Partial<Pick<StoredFit, "name" | "saved">>,
+): Promise<StoredFit | undefined> {
+  const existing = await db().fits.get(id);
+  if (!existing) return undefined;
+  const updated: StoredFit = { ...existing, ...patch, updatedAt: Date.now() };
+  await db().fits.put(updated);
+  return updated;
+}
+
+export async function deleteFit(id: string): Promise<void> {
+  await db().fits.delete(id);
+}
