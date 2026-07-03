@@ -1,0 +1,141 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * BikeFit design tokens (UX-UI-Design §2).
+ * No hardcoded colors, spacing, radii, or shadows in components: use these.
+ * Class-strategy dark mode on <html>. `system` resolves to .dark or light
+ * at runtime; light is the default (:root), dark overrides under .dark.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light theme (UX-UI-Design §2.2). Default when no class is present. */
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #eff2f6;
+  --ink: #101820;
+  --ink-muted: #5a6676;
+  --line: #dee3ea;
+  --accent: #0e9f6e;
+  --accent-ink: #ffffff;
+  /* Light theme does not redefine warn/danger; reuse the shared values. */
+  --warn: #e8b34b;
+  --danger: #e5645f;
+
+  /* Radius scale (UX-UI-Design §2.4). */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Elevation: shadows only on overlays. */
+  --shadow-overlay: 0 8px 30px rgb(16 24 32 / 0.12);
+
+  color-scheme: light;
+}
+
+/* Dark theme (UX-UI-Design §2.1). */
+.dark {
+  --bg: #0b0f14;
+  --surface: #121821;
+  --surface-2: #1a2230;
+  --ink: #e8edf4;
+  --ink-muted: #8a97a8;
+  --line: #232d3d;
+  --accent: #3ddc97;
+  --accent-ink: #062b1d;
+  --warn: #e8b34b;
+  --danger: #e5645f;
+
+  --shadow-overlay: 0 8px 30px rgb(0 0 0 / 0.35);
+
+  color-scheme: dark;
+}
+
+/*
+ * Map tokens into the Tailwind theme with `inline` so utilities emit
+ * var(--token) and flip live when the .dark class toggles.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* Motion (UX-UI-Design §2.4). */
+  --ease-instrument: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Visible focus ring: accent, 2px offset (UX-UI-Design §6). */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Measurement display: Geist Mono + tabular-nums. Numbers are the product,
+ * so every measurement, range, and unit uses this single utility
+ * (UX-UI-Design §2.3). Tailwind v4 requires @utility, not @layer utilities.
+ */
+@utility measurement {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Respect prefers-reduced-motion everywhere (UX-UI-Design §2.4, §6). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Print is always light regardless of theme (UX-UI-Design §7). Full fit
+ * sheet arrives in Phase 4; this keeps print legible in the meantime. */
+@media print {
+  :root,
+  .dark {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #eff2f6;
+    --ink: #101820;
+    --ink-muted: #5a6676;
+    --line: #dee3ea;
+    --accent: #0e9f6e;
+    --accent-ink: #ffffff;
+    color-scheme: light;
+  }
+}
