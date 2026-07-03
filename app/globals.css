@@ -17,7 +17,9 @@
   --ink: #101820;
   --ink-muted: #5a6676;
   --line: #dee3ea;
-  --accent: #0e9f6e;
+  /* Darkened from the spec's #0e9f6e so accent-ink (white) on accent reaches
+     >= 4.5:1 (UX-UI-Design §2.2 contrast rule, verified in this polish pass). */
+  --accent: #0b7f52;
   --accent-ink: #ffffff;
   /* Light theme does not redefine warn/danger; reuse the shared values. */
   --warn: #e8b34b;
@@ -134,7 +136,7 @@
     --ink: #101820;
     --ink-muted: #5a6676;
     --line: #dee3ea;
-    --accent: #0e9f6e;
+    --accent: #0b7f52;
     --accent-ink: #ffffff;
     color-scheme: light;
   }

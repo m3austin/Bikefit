@@ -78,7 +78,9 @@ test.describe("settings data controls", () => {
       mimeType: "application/json",
       buffer: Buffer.from(JSON.stringify(backup)),
     });
-    await expect(page.getByText("Backup imported")).toBeVisible();
+    await expect(
+      page.getByText("Backup imported", { exact: true }),
+    ).toBeVisible();
     await page.goto("/fits");
     await expect(page.getByText("Imported fit")).toBeVisible();
   });
