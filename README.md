@@ -4,7 +4,13 @@ A free, local-first web app that gives everyday cyclists a professional-quality 
 
 ## Status
 
-Spec complete, build not started. Start with Phase 0 in [docs/Build-Plan.md](docs/Build-Plan.md).
+v1.0 built (Phases 0-7 complete): local-first measurement wizard, a pure fit
+engine with locked golden tests, results + print fit sheet, saved fits, settings
+with export/import, offline PWA, an accessibility pass, and optional Supabase
+sync. Ready to deploy per [docs/Launch.md](docs/Launch.md).
+
+Run locally: `npm install`, then `npm run dev`. Gates: `npm run lint`,
+`npx tsc --noEmit`, `npm run test`, `npm run build`, `npm run e2e`.
 
 ## Docs
 
