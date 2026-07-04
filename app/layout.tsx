@@ -13,7 +13,14 @@ import { AppHeader } from "@/components/app-header";
 import { AppStatus } from "@/components/app-status";
 import { DistributionFlag } from "@/components/distribution";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bikefit.vercel.app";
+// NEXT_PUBLIC_SITE_URL wins; otherwise Vercel's build-time system env gives
+// the real production domain. (The old hardcoded bikefit.vercel.app fallback
+// was somebody else's site.)
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
 const DESCRIPTION =
   "A free, local-first starting bike fit from your body measurements. No account, no ads, nothing to install.";
 

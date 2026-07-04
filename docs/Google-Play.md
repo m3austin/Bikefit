@@ -46,10 +46,11 @@ journey is **3 to 4 weeks**, most of it waiting.
 
 ### Part 2: build the Android app (an afternoon, free)
 
-4. Go to **pwabuilder.com**, enter the production URL, and let it score
-   the site (manifest and service worker already exist, so this should
-   pass). Fix anything it flags, e.g. adding a 512 px **maskable** icon to
-   the manifest if asked.
+4. **Icons: DONE.** The manifest now serves PNG icons including the 512 px
+   maskable one Android requires (`/icon-512.png`,
+   `/icon-512-maskable.png`). Go to **pwabuilder.com**, enter the
+   production URL, and let it score the site (manifest, service worker,
+   and icons all pass).
 5. Click **Package for stores -> Android**. PWABuilder generates a signed
    `.aab` (Android App Bundle) plus a **signing key file and passwords.
    Save these somewhere safe**; losing them means losing the ability to
@@ -63,9 +64,12 @@ journey is **3 to 4 weeks**, most of it waiting.
 
 ### Part 3: the Play Console listing (an evening)
 
-7. In the Play Console: **Create app**, fill in the store listing: app
-   name, short and full descriptions, at least 2 phone screenshots, the
-   512 px icon, and a 1024x500 "feature graphic" banner.
+7. **Listing assets: DONE.** `store-assets/` in the repo holds six
+   1080x1920 phone screenshots (landing, wizard, results, adjustment
+   guide, video analysis, method) and the 1024x500 feature graphic; the
+   512 px icon is `public/icon-512.png`. In the Play Console: **Create
+   app**, fill in the store listing (name, short and full descriptions)
+   and upload those files.
 8. Complete the questionnaires: **content rating** (BikeFit rates
    Everyone), **target audience**, **data safety** (declare: no data
    collected by default; optional account sync stores email and fit data;
@@ -95,8 +99,13 @@ journey is **3 to 4 weeks**, most of it waiting.
 - [ ] Create the Play developer account (25 USD) and start ID verification
 - [x] Add `/privacy` page to the site (done, served at /privacy)
 - [x] Hide the tip jar for Play-wrapped visits (done; set Start URL to /?src=play)
+- [x] PNG icons incl. maskable in the manifest (done)
+- [x] Six phone screenshots + feature graphic (done, in `store-assets/`)
 - [ ] PWABuilder: generate the `.aab` with Start URL `/?src=play`, save the signing key safely
+      (a ready Bubblewrap config also sits at `twa/twa-manifest.json` with REPLACE placeholders)
 - [ ] Fill the two REPLACE placeholders in `public/.well-known/assetlinks.json` and deploy
+      (use the PLAY APP SIGNING fingerprint from Play Console -> App integrity once the app
+      exists there; the local upload key's fingerprint only helps pre-Play sideload tests)
 - [ ] Store listing, questionnaires, screenshots, feature graphic
 - [ ] Closed testing with 12+ testers for 14 days
 - [ ] Apply for production, submit for review

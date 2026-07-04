@@ -43,3 +43,8 @@ yarn-error.log*
 .idea
 .vscode/*
 !.vscode/extensions.json
+
+# TWA packaging (docs/Google-Play.md): only the manifest is tracked.
+# Signing keys and generated Android projects must NEVER be committed.
+twa/*
+!twa/twa-manifest.json
