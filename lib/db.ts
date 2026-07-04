@@ -13,6 +13,7 @@ import type {
   MeasurementKey,
   Priority,
 } from "@/lib/engine";
+import type { TargetRange, Verdict } from "@/lib/kernel/rules";
 import type { Unit } from "@/lib/units";
 
 /** The in-progress wizard, persisted every step so a refresh resumes it. */
@@ -50,6 +51,34 @@ export type Profile = {
   updatedAt: number;
 };
 
+/** One scored metric, frozen into a saved analysis so it can be compared to
+ * later ones even if the ranges change. */
+export type SavedMetric = {
+  key: string;
+  label: string;
+  value: number;
+  target: TargetRange;
+  verdict: Verdict;
+  /** 0-10 sub-score at save time. */
+  score: number;
+};
+
+/**
+ * A saved video-analysis result for any sport. Only the numbers are stored,
+ * on-device, never the video. Keyed by sport + variant (the like-for-like
+ * comparison unit: a golf swing, a squat, a gait), so a new analysis can be
+ * compared against the previous one of the same kind.
+ */
+export type SavedAnalysis = {
+  id: string;
+  sport: string;
+  variant: string;
+  /** 0-10 overall technique score, or null when nothing was measured. */
+  overall: number | null;
+  metrics: SavedMetric[];
+  createdAt: number;
+};
+
 export type AppSettings = {
   id: string; // singleton: SETTINGS_ID
   units?: Unit;
@@ -84,6 +113,10 @@ async function makeDexie(): Promise<AppDb> {
   dexie.version(2).stores({
     tombstones: "id, deletedAt",
   });
+  // v3 adds saved video analyses (any sport), for progress comparison.
+  dexie.version(3).stores({
+    analyses: "id, sport, createdAt",
+  });
   // Dexie exposes a table accessor per store; the AppDb interface narrows it.
   return dexie as unknown as AppDb;
 }
@@ -111,6 +144,7 @@ interface AppDb {
   profile: TableLike<Profile>;
   settings: TableLike<AppSettings>;
   tombstones: TableLike<TombstoneRow>;
+  analyses: TableLike<SavedAnalysis>;
   transaction<T>(mode: string, ...args: unknown[]): Promise<T>;
 }
 
@@ -151,6 +185,7 @@ class MemoryDb implements AppDb {
   profile = new MemoryTable<Profile>();
   settings = new MemoryTable<AppSettings>();
   tombstones = new MemoryTable<TombstoneRow>();
+  analyses = new MemoryTable<SavedAnalysis>();
   async transaction<T>(_mode: string, ...args: unknown[]): Promise<T> {
     const fn = args[args.length - 1] as () => Promise<T>;
     return fn();
@@ -262,6 +297,45 @@ export async function putFit(fit: StoredFit): Promise<void> {
   await d.tombstones.delete(fit.id);
 }
 
+// --- Saved analyses (progress comparison) -----------------------------------
+
+/** Save a completed analysis. Auto-called after each analysis so the next one
+ * of the same sport+variant can compare against it. */
+export async function saveAnalysis(
+  record: Omit<SavedAnalysis, "id" | "createdAt">,
+): Promise<SavedAnalysis> {
+  const row: SavedAnalysis = {
+    ...record,
+    id: crypto.randomUUID(),
+    createdAt: Date.now(),
+  };
+  await (await db()).analyses.put(row);
+  return row;
+}
+
+/** The most recent saved analysis for a sport+variant, or undefined. Pass
+ * `beforeId` to exclude a just-saved row and get the one before it. */
+export async function latestAnalysis(
+  sport: string,
+  variant: string,
+  beforeId?: string,
+): Promise<SavedAnalysis | undefined> {
+  const all = await (await db()).analyses.toArray();
+  return all
+    .filter(
+      (a) => a.sport === sport && a.variant === variant && a.id !== beforeId,
+    )
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
+}
+
+/** Every saved analysis for a sport, newest first (for a future history view). */
+export async function listAnalyses(sport: string): Promise<SavedAnalysis[]> {
+  const all = await (await db()).analyses.toArray();
+  return all
+    .filter((a) => a.sport === sport)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 // --- Tombstones & sync helpers ----------------------------------------------
 
 export async function listTombstones(): Promise<TombstoneRow[]> {
@@ -347,5 +421,6 @@ export async function eraseAll(): Promise<void> {
     d.profile.clear(),
     d.settings.clear(),
     d.tombstones.clear(),
+    d.analyses.clear(),
   ]);
 }

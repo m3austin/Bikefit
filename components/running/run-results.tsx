@@ -222,6 +222,8 @@ export function RunResultsSection({
       secondary={secondary}
       drillsBase="/running/drills"
       rabbitHoleHref="/method#running"
+      historySport="running"
+      historyVariant="gait"
       allClearNote="No change to make from these numbers. Run, and let how you feel over the next weeks have the final say."
       keyFrames={keyFrames}
       videoUrl={sideUrl}

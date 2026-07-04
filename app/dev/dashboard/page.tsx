@@ -1,7 +1,9 @@
 "use client";
 
+import { ComparisonStrip } from "@/components/kernel/comparison-strip";
 import { ScoreDashboard } from "@/components/kernel/score-dashboard";
-import type { MetricInput } from "@/lib/kernel/dashboard";
+import { buildScoreBoard, type MetricInput } from "@/lib/kernel/dashboard";
+import type { SavedAnalysis } from "@/lib/db";
 import type { KeyFrameSpec } from "@/lib/kernel/keyframes";
 import type { Finding } from "@/lib/kernel/rules";
 import { LANDMARK, type PoseFrame } from "@/lib/pose-model";
@@ -148,10 +150,38 @@ const KEY_FRAMES: KeyFrameSpec[] = [
   },
 ];
 
+// A synthetic "previous" run so the comparison strip can be reviewed here.
+const PREVIOUS: SavedAnalysis = {
+  id: "prev",
+  sport: "golf",
+  variant: "swing",
+  overall: 7.4,
+  createdAt: Date.now() - 6 * 24 * 60 * 60 * 1000,
+  metrics: buildScoreBoard([
+    { ...METRICS[0]!, value: 3.4 },
+    { ...METRICS[1]!, value: 18, verdict: "out_of_range" },
+    METRICS[2]!,
+    METRICS[3]!,
+    { ...METRICS[4]!, value: 132, verdict: "out_of_range" },
+  ]).categories.map((c) => ({
+    key: c.key,
+    label: c.label,
+    value: c.value,
+    target: c.target,
+    verdict: c.verdict,
+    score: c.score,
+  })),
+};
+
 export default function DashboardPreviewPage() {
+  const board = buildScoreBoard(METRICS);
   return (
     <div className="sport-golf flex flex-col gap-6">
       <h1 className="text-2xl font-semibold text-ink">Dashboard preview</h1>
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-ink">Comparison strip (synthetic)</p>
+        <ComparisonStrip board={board} previous={PREVIOUS} />
+      </div>
       <ScoreDashboard
         title="Swing analysis"
         intro="Synthetic data, for reviewing the dashboard without a real clip."

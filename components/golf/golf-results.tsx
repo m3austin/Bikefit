@@ -197,6 +197,8 @@ export function GolfResultsSection({
       secondary={secondary}
       drillsBase="/golf/drills"
       rabbitHoleHref="/method#golf"
+      historySport="golf"
+      historyVariant="swing"
       allClearNote="No change to make from these numbers. Go play, and let your strikes have the final say."
       keyFrames={keyFrames}
       videoUrl={videoUrl}

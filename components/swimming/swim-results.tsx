@@ -157,6 +157,8 @@ export function SwimResultsSection({
       secondary={secondary}
       drillsBase="/swimming/drills"
       rabbitHoleHref="/method#swimming"
+      historySport="swimming"
+      historyVariant="stroke"
       allClearNote="No change to make from these numbers. Swim, and remember these readings are rough by nature."
       keyFrames={keyFrames}
       videoUrl={videoUrl}

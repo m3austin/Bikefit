@@ -5,8 +5,10 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 
 import { FitRecommendations } from "@/components/fit/fit-recommendations";
+import { ComparisonStrip } from "@/components/kernel/comparison-strip";
 import { KeyFrameFilmstrip } from "@/components/kernel/key-frame-filmstrip";
 import { ScoreRing } from "@/components/kernel/score-ring";
+import { useAnalysisHistory } from "@/components/kernel/use-analysis-history";
 import { formatByUnit } from "@/lib/format";
 import { buildScoreBoard, type MetricInput } from "@/lib/kernel/dashboard";
 import type { KeyFrameSpec } from "@/lib/kernel/keyframes";
@@ -50,6 +52,11 @@ export type ScoreDashboardProps = {
   /** Deep link into the rabbit hole for this sport's sources, e.g.
    * "/method#cycling". Shown as the "where these ranges come from" link. */
   rabbitHoleHref?: string;
+  /** When set, the analysis is auto-saved on-device and compared against the
+   * previous result of the same sport+variant. Variant is the like-for-like
+   * unit (a swing, a squat, a gait). */
+  historySport?: string;
+  historyVariant?: string;
   /** Banners rendered above the score (confidence, data-quality warnings). */
   banners?: React.ReactNode;
   /** Sport-specific extras and the disclaimer, rendered at the end. */
@@ -112,10 +119,13 @@ export function ScoreDashboard({
   videoUrl,
   aspect,
   rabbitHoleHref = "/method",
+  historySport,
+  historyVariant,
   banners,
   children,
 }: ScoreDashboardProps) {
   const board = React.useMemo(() => buildScoreBoard(metrics), [metrics]);
+  const { previous } = useAnalysisHistory(historySport, historyVariant, board);
 
   return (
     <section className="flex flex-col gap-8 border-t border-line pt-8">
@@ -160,6 +170,9 @@ export function ScoreDashboard({
           </div>
         </div>
       ) : null}
+
+      {/* Progress since the previous saved analysis of this kind. */}
+      {previous ? <ComparisonStrip board={board} previous={previous} /> : null}
 
       {/* Sub-scores. */}
       {board.categories.length > 0 ? (
