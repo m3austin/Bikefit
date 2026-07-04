@@ -11,6 +11,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { SyncProvider } from "@/components/sync-provider";
 import { AppHeader } from "@/components/app-header";
 import { AppStatus } from "@/components/app-status";
+import { DistributionFlag } from "@/components/distribution";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://bikefit.vercel.app";
 const DESCRIPTION =
@@ -69,6 +70,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className="min-h-dvh bg-bg text-ink antialiased">
+        <DistributionFlag />
         <ThemeProvider>
           <UnitProvider>
             <ToastProvider>

@@ -6,6 +6,7 @@ import { Download, Heart, TriangleAlert, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useIsPlayDistribution } from "@/components/distribution";
 import { UnitToggle } from "@/components/fit/unit-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountSection } from "@/components/fit/account-section";
@@ -163,7 +164,8 @@ export function SettingsView() {
 
   const canErase = eraseText.trim().toLowerCase() === "erase";
   const persistence = isPersistenceAvailable();
-  const supportLink = supportUrl();
+  // Support surfaces hide in the Play-wrapped app (Google payment policy).
+  const supportLink = useIsPlayDistribution() ? undefined : supportUrl();
 
   return (
     <div className="flex flex-col">
@@ -302,7 +304,14 @@ export function SettingsView() {
       <Section title="About">
         <p className="text-sm text-ink-muted">
           BikeFit is free and local-first. Your measurements never leave this
-          device. There are no cookies to consent to.
+          device unless you opt into sync. The details live in the{" "}
+          <a
+            href="/privacy"
+            className="text-accent underline underline-offset-2"
+          >
+            privacy policy
+          </a>
+          .
         </p>
         <p className="measurement text-sm text-ink-muted">
           Engine version {ENGINE_VERSION}

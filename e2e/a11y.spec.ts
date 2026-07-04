@@ -27,6 +27,7 @@ const staticRoutes = [
   ["/settings", "settings"],
   ["/method", "method"],
   ["/adjust", "adjustment guide"],
+  ["/privacy", "privacy policy"],
 ] as const;
 
 for (const [path, label] of staticRoutes) {

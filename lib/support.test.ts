@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { SUPPORT_RESHOW_MS, shouldShowSupportNote } from "@/lib/support";
+import {
+  SUPPORT_RESHOW_MS,
+  isPlaySource,
+  shouldShowSupportNote,
+} from "@/lib/support";
 
 /*
  * The softness rules are the product here, so they are pinned by tests:
@@ -84,5 +88,15 @@ describe("shouldShowSupportNote", () => {
         nowMs: NOW,
       }),
     ).toBe(true);
+  });
+});
+
+describe("isPlaySource", () => {
+  it("recognizes the Play-wrapped start URL and nothing else", () => {
+    expect(isPlaySource("?src=play")).toBe(true);
+    expect(isPlaySource("?utm=x&src=play")).toBe(true);
+    expect(isPlaySource("")).toBe(false);
+    expect(isPlaySource("?src=web")).toBe(false);
+    expect(isPlaySource("?source=play")).toBe(false);
   });
 });

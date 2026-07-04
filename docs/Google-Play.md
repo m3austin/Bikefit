@@ -34,16 +34,15 @@ journey is **3 to 4 weeks**, most of it waiting.
 1. Go to `play.google.com/console/signup`, sign in with a Google account,
    choose a **personal** account, pay the 25 USD, and complete identity
    verification (a photo of ID; approval usually takes a day or two).
-2. Add a **privacy policy page** to the site (a simple `/privacy` route;
-   Play requires a URL even though BikeFit collects nearly nothing). Say
-   plainly what is true: data stays on-device, optional sync stores fits
-   and an email with Supabase, videos never leave the device.
-3. Decide about the **tip jar**: Google requires its own billing system
-   for digital purchases inside Play-distributed apps, and a Stripe tip
-   link can be read as one. The safe, standard move is to hide the tip jar
-   when the site runs inside the Android app (start the TWA at
-   `/?src=play` and hide support UI for that visit). Do this before
-   submitting, not after a rejection.
+2. **Privacy policy page: DONE.** The site serves it at `/privacy`
+   (truthful and plain: data stays on-device, optional sync stores fits
+   and an email with Supabase, videos never leave the device). Use
+   `https://<your-domain>/privacy` wherever Play asks for the URL.
+3. **Tip jar hiding: DONE.** Google requires its own billing system for
+   digital purchases inside Play-distributed apps, and a Stripe tip link
+   can be read as one. The app hides every support surface when launched
+   at `/?src=play` (the flag persists on-device). Your only job: when
+   PWABuilder asks for the app's **Start URL, enter `/?src=play`**.
 
 ### Part 2: build the Android app (an afternoon, free)
 
@@ -55,10 +54,12 @@ journey is **3 to 4 weeks**, most of it waiting.
    `.aab` (Android App Bundle) plus a **signing key file and passwords.
    Save these somewhere safe**; losing them means losing the ability to
    update the app.
-6. PWABuilder also gives you an `assetlinks.json` file. Put it in the repo
-   at `public/.well-known/assetlinks.json` and deploy. This is the
-   handshake proving you own the site; without it the app shows a browser
-   address bar instead of running full-screen.
+6. **assetlinks.json: scaffolded.** The repo already serves
+   `public/.well-known/assetlinks.json` with two REPLACE placeholders.
+   Swap in the package id and the SHA-256 signing fingerprint PWABuilder
+   shows you, and deploy. This is the handshake proving you own the site;
+   without it the app shows a browser address bar instead of running
+   full-screen.
 
 ### Part 3: the Play Console listing (an evening)
 
@@ -92,10 +93,10 @@ journey is **3 to 4 weeks**, most of it waiting.
 ## Next steps checklist (in order)
 
 - [ ] Create the Play developer account (25 USD) and start ID verification
-- [ ] Add `/privacy` page to the site
-- [ ] Hide the tip jar for Play-wrapped visits
-- [ ] PWABuilder: generate the `.aab`, save the signing key safely
-- [ ] Add `public/.well-known/assetlinks.json` and deploy
+- [x] Add `/privacy` page to the site (done, served at /privacy)
+- [x] Hide the tip jar for Play-wrapped visits (done; set Start URL to /?src=play)
+- [ ] PWABuilder: generate the `.aab` with Start URL `/?src=play`, save the signing key safely
+- [ ] Fill the two REPLACE placeholders in `public/.well-known/assetlinks.json` and deploy
 - [ ] Store listing, questionnaires, screenshots, feature graphic
 - [ ] Closed testing with 12+ testers for 14 days
 - [ ] Apply for production, submit for review

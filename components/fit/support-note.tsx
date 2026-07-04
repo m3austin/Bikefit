@@ -4,6 +4,7 @@ import * as React from "react";
 import { ExternalLink, Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useIsPlayDistribution } from "@/components/distribution";
 import { getSettings, saveSettings } from "@/lib/db";
 import { shouldShowSupportNote, supportUrl } from "@/lib/support";
 
@@ -16,9 +17,12 @@ import { shouldShowSupportNote, supportUrl } from "@/lib/support";
  */
 export function SupportNote({ savedFitCount }: { savedFitCount: number }) {
   const url = supportUrl();
+  // Google Play distribution never shows support surfaces (payment policy).
+  const play = useIsPlayDistribution();
   const [visible, setVisible] = React.useState(false);
 
   React.useEffect(() => {
+    if (play) return;
     let active = true;
     async function decide() {
       const settings = await getSettings();
@@ -40,9 +44,9 @@ export function SupportNote({ savedFitCount }: { savedFitCount: number }) {
     return () => {
       active = false;
     };
-  }, [url, savedFitCount]);
+  }, [url, savedFitCount, play]);
 
-  if (!visible || !url) return null;
+  if (!visible || !url || play) return null;
 
   return (
     <aside

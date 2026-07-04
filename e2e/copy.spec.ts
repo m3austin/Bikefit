@@ -38,6 +38,7 @@ const routes = [
   "/fit/new",
   "/fit/video",
   "/adjust",
+  "/privacy",
 ];
 
 for (const route of routes) {

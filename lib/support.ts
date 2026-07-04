@@ -32,6 +32,19 @@ export type SupportPromptState = {
 };
 
 /**
+ * Google Play distribution: the Play-wrapped app (a Trusted Web Activity)
+ * starts at /?src=play, and Google's payment policy requires Play Billing
+ * for in-app digital payments, so ALL support surfaces hide there. The flag
+ * persists (docs/Google-Play.md) because in-app navigation drops the query.
+ */
+export const PLAY_FLAG_KEY = "bikefit:distribution";
+
+/** Whether a URL search string marks this visit as the Play-wrapped app. */
+export function isPlaySource(search: string): boolean {
+  return new URLSearchParams(search).get("src") === "play";
+}
+
+/**
  * Whether the gentle note may appear right now. Pure, so the softness rules
  * are testable: configured, earned value, not dismissed, not shown recently.
  */
