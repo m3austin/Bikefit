@@ -1,5 +1,6 @@
 import { FrontalReportView } from "@/components/fit/frontal-report";
 import { StrokeReportView } from "@/components/fit/stroke-report";
+import { DetailsDisclosure } from "@/components/kernel/details-disclosure";
 import { ScoreDashboard } from "@/components/kernel/score-dashboard";
 import { formatDeg } from "@/lib/format";
 import type { MetricInput } from "@/lib/kernel/dashboard";
@@ -137,15 +138,12 @@ export function VideoResultsSection({
       videoUrl={sideUrl}
       aspect={aspect}
     >
-      {sideReport ? (
-        <StrokeReportView report={sideReport} />
-      ) : (
-        <p className="text-sm text-ink-muted">
-          Run Analyze pedal strokes on the side video to add joint angles
-          here.
-        </p>
-      )}
-      {frontalReport ? <FrontalReportView report={frontalReport} /> : null}
+      {sideReport || frontalReport ? (
+        <DetailsDisclosure label="See the full joint-angle measurements">
+          {sideReport ? <StrokeReportView report={sideReport} /> : null}
+          {frontalReport ? <FrontalReportView report={frontalReport} /> : null}
+        </DetailsDisclosure>
+      ) : null}
 
       {primary ? (
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
@@ -169,11 +167,10 @@ export function VideoResultsSection({
       ) : null}
 
       <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
-        This is guidance from measurements and published conventions, not a
-        professional bike fit or medical advice. Change one thing at a time,
-        in small steps, and give each change a real ride before judging it.
-        If pain persists or gets worse, stop and see a professional bike
-        fitter or a physician.
+        Guidance from measurements, not a professional bike fit or medical
+        advice. Change one thing at a time, and give each change a real ride
+        before judging it. If pain persists or gets worse, stop and see a
+        professional bike fitter or a physician.
       </p>
     </ScoreDashboard>
   );

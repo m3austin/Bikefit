@@ -1,3 +1,4 @@
+import { DetailsDisclosure } from "@/components/kernel/details-disclosure";
 import { ScoreDashboard } from "@/components/kernel/score-dashboard";
 import { formatDeg, formatRatio } from "@/lib/format";
 import type { MetricInput } from "@/lib/kernel/dashboard";
@@ -201,34 +202,17 @@ export function GolfResultsSection({
       videoUrl={videoUrl}
       aspect={aspect}
     >
-      <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-semibold text-ink">Swing timeline</h3>
+      <DetailsDisclosure label="See the swing timeline">
         {dtlReport ? (
           <PhaseSummary report={dtlReport} title="Down the line" />
         ) : null}
         {faceReport ? <PhaseSummary report={faceReport} title="Face on" /> : null}
-      </div>
+      </DetailsDisclosure>
 
-      <div
-        role="note"
-        aria-label="About these numbers"
-        className="flex flex-col gap-1 rounded-md border border-line bg-surface p-4"
-      >
-        <p className="text-sm font-medium text-ink">
-          What one camera can and cannot see
-        </p>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          Turn numbers here are 2D proxies: they read how your body&apos;s
-          width changes on camera, not true rotation. A launch monitor or an
-          in-person coach sees plenty this cannot. Treat these as honest
-          hints, take the one change, and judge it by your strikes.
-        </p>
-      </div>
-
-      <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
-        This is guidance from measurements and published conventions, not a
-        lesson or medical advice. Change one thing at a time, and if anything
-        hurts, stop and see a coach or a physician.
+      <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+        Guidance from measurements, not a lesson or medical advice. Change one
+        thing at a time, and if anything hurts, stop and see a coach or a
+        physician.
       </p>
     </ScoreDashboard>
   );

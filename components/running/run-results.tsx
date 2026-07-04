@@ -1,3 +1,4 @@
+import { DetailsDisclosure } from "@/components/kernel/details-disclosure";
 import { ScoreDashboard } from "@/components/kernel/score-dashboard";
 import { formatDeg, formatSpm } from "@/lib/format";
 import type { MetricInput } from "@/lib/kernel/dashboard";
@@ -246,34 +247,18 @@ export function RunResultsSection({
         </>
       }
     >
-      {sideReport ? <FootStrikeCard footStrike={sideReport.footStrike} /> : null}
-
-      <div className="flex flex-col gap-4">
-        <h3 className="text-lg font-semibold text-ink">What was read</h3>
+      <DetailsDisclosure label="See the foot strike and what was read">
+        {sideReport ? (
+          <FootStrikeCard footStrike={sideReport.footStrike} />
+        ) : null}
         <StrideSummary side={sideReport} rear={rearReport} />
-      </div>
+      </DetailsDisclosure>
 
-      <div
-        role="note"
-        aria-label="About these numbers"
-        className="flex flex-col gap-1 rounded-md border border-line bg-surface p-4"
-      >
-        <p className="text-sm font-medium text-ink">
-          What one camera can and cannot see
-        </p>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          A side-on phone camera reads one plane of a three-dimensional
-          movement, and treadmill running differs a little from the road.
-          Treat these as honest hints ranked by usefulness, take the one
-          change, and judge it by how running feels over the next two weeks.
-        </p>
-      </div>
-
-      <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
-        This is guidance from measurements and published conventions, not a
-        lesson, a rehab plan, or medical advice. Change one thing at a time,
-        gently. If you are running with pain, or a change creates pain, stop
-        and see a physiotherapist; that is their job, not this app&apos;s.
+      <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+        Guidance from measurements, not a lesson, a rehab plan, or medical
+        advice. Change one thing at a time. If you are running with pain, or a
+        change creates pain, stop and see a physiotherapist; that is their job,
+        not this app&apos;s.
       </p>
     </ScoreDashboard>
   );

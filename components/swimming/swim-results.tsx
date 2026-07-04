@@ -163,26 +163,10 @@ export function SwimResultsSection({
       aspect={aspect}
       banners={<ConfidenceLead report={report} />}
     >
-      <div
-        role="note"
-        aria-label="About these numbers"
-        className="flex flex-col gap-1 rounded-md border border-line bg-surface p-4"
-      >
-        <p className="text-sm font-medium text-ink">Why swimming is beta</p>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          One above-water camera sees one side of a movement that lives half
-          underwater. Body roll especially is inferred from a shoulder that
-          bobs for several reasons at once. These are the roughest readings in
-          the app on purpose; take the one change, and let the feel of the
-          water have the final say.
-        </p>
-      </div>
-
-      <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
-        This is guidance from measurements and published conventions, not a
-        lesson or medical advice. Never swim alone where you cannot safely
-        stop, and if a change causes shoulder pain, stop and see a coach or a
-        physiotherapist.
+      <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+        Guidance from rough measurements, not a lesson or medical advice.
+        Never swim alone where you cannot safely stop, and if a change causes
+        shoulder pain, stop and see a coach or a physiotherapist.
       </p>
     </ScoreDashboard>
   );

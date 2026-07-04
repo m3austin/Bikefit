@@ -1,3 +1,4 @@
+import { DetailsDisclosure } from "@/components/kernel/details-disclosure";
 import { ScoreDashboard } from "@/components/kernel/score-dashboard";
 import type { MetricInput } from "@/lib/kernel/dashboard";
 import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
@@ -171,30 +172,14 @@ export function LiftResultsSection({
         ) : null
       }
     >
-      <RepSummary report={report} config={config} />
-
-      <div
-        role="note"
-        aria-label="About these numbers"
-        className="flex flex-col gap-1 rounded-md border border-line bg-surface p-4"
-      >
-        <p className="text-sm font-medium text-ink">
-          What one camera can and cannot see
-        </p>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          A single side-on camera reads one plane. The back-rounding reading
-          especially is a 2D proxy: it watches your torso outline, not your
-          spine, and errs toward caution on purpose. Treat these as honest
-          hints, take the one change, and never let a number talk you into a
-          rep that feels wrong.
-        </p>
-      </div>
+      <DetailsDisclosure label="See the full rep breakdown">
+        <RepSummary report={report} config={config} />
+      </DetailsDisclosure>
 
       <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
-        This is guidance from measurements and published conventions, not a
-        coach, a spotter, or medical advice. It cannot catch a failed rep.
-        Change one thing at a time, keep the weight within your control, and if
-        anything hurts, stop and see a coach or a physician. For heavy or
+        Guidance from measurements, not a coach, a spotter, or medical advice.
+        It cannot catch a failed rep. Keep the weight within your control, and
+        if anything hurts, stop and see a coach or a physician. For heavy or
         contest lifting, work with a qualified coach.
       </p>
     </ScoreDashboard>
