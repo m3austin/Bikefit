@@ -27,7 +27,16 @@ export type GlossaryId =
   | "torque"
   | "torque-wrench"
   | "carbon-assembly-paste"
-  | "minimum-insertion";
+  | "minimum-insertion"
+  | "down-the-line"
+  | "face-on"
+  | "address"
+  | "tempo"
+  | "x-factor"
+  | "lie-angle"
+  | "shaft-flex"
+  | "grip-size"
+  | "wrist-to-floor";
 
 export type GlossaryEntry = {
   /** The word as it should read in a sentence. */
@@ -140,6 +149,51 @@ export const GLOSSARY: Record<GlossaryId, GlossaryEntry> = {
     term: "minimum insertion mark",
     definition:
       "The line etched near the bottom of a seatpost or quill stem. At least that much must stay inside the frame; riding with the mark showing risks breaking the post or frame.",
+  },
+  "down-the-line": {
+    term: "down the line",
+    definition:
+      "A camera view from behind the golfer, looking along the target line. The view where swing plane and posture are easiest to see.",
+  },
+  "face-on": {
+    term: "face on",
+    definition:
+      "A camera view from directly in front of the athlete, perpendicular to the target line. The view where turn, sway, and head movement show best.",
+  },
+  address: {
+    term: "address",
+    definition:
+      "The setup position over the ball before the swing starts: posture set, club grounded, everything still.",
+  },
+  tempo: {
+    term: "tempo",
+    definition:
+      "The rhythm of the swing, measured as backswing time compared to downswing time. Smooth swings tend to take about three times longer going back than coming down.",
+  },
+  "x-factor": {
+    term: "x-factor",
+    definition:
+      "The gap between how far the shoulders turn and how far the hips turn at the top of the backswing. Some separation stores power; it is a feel, not a homework assignment.",
+  },
+  "lie-angle": {
+    term: "lie angle",
+    definition:
+      "The angle between the club's shaft and the ground when the club sits flat. If it's wrong for you, the face points offline at impact even with a good swing.",
+  },
+  "shaft-flex": {
+    term: "shaft flex",
+    definition:
+      "How much the club's shaft bends during the swing, usually labeled L, A, R, S, or X. Faster swings generally load stiffer shafts.",
+  },
+  "grip-size": {
+    term: "grip size",
+    definition:
+      "The thickness of the handle. Too thin encourages handsy flipping, too thick can mute the hands entirely; hand size sets the starting point.",
+  },
+  "wrist-to-floor": {
+    term: "wrist to floor",
+    definition:
+      "The distance from your wrist crease to the ground while standing relaxed in flat shoes. The classic static measurement for starting club length.",
   },
 };
 
