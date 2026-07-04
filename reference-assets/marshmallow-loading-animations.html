@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marshmallow Labs — Loading Animation Set</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFFDF9; --plum:#40304F; --pink:#FF6FB5; --cheek:#FF9CC9;
+    --ink:#3A2E48; --bg:#FBF6FF; --sweat:#6FC8F0; --gold:#FFC24C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:
+      radial-gradient(closest-side at 10% 6%, rgba(255,111,181,.10), transparent 55%),
+      radial-gradient(closest-side at 92% 6%, rgba(169,140,240,.14), transparent 55%), var(--bg);
+    color:var(--ink); font-family:'Quicksand',system-ui,sans-serif; padding:26px 16px 70px;}
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{text-align:center;margin-bottom:22px;}
+  .eyebrow{font-family:'Baloo 2';font-weight:700;letter-spacing:.2em;font-size:11px;color:var(--pink);text-transform:uppercase;}
+  h1{font-family:'Baloo 2';font-weight:800;font-size:28px;margin:6px 0 8px;}
+  .sub{font-size:14px;color:#8a7f95;max-width:600px;margin:0 auto;line-height:1.55;}
+
+  .demo{background:#fff;border-radius:26px;padding:22px;margin:26px auto 8px;max-width:340px;
+    box-shadow:0 10px 30px rgba(64,48,79,.12); text-align:center;}
+  .demo-label{font-family:'Baloo 2';font-weight:700;font-size:13px;color:#9a8fa4;margin-bottom:10px;}
+  .demo-stage{width:100%;aspect-ratio:200/230;border-radius:18px;overflow:hidden;
+    background:linear-gradient(160deg,#F3ECFF,#EDE1FF); position:relative;}
+  .demo-stage svg{width:100%;height:100%;display:block;}
+  .demo-name{margin-top:10px;font-family:'Baloo 2';font-weight:700;font-size:14px;color:var(--pink);}
+
+  h2{font-family:'Baloo 2';font-weight:700;font-size:15px;margin:34px 0 14px;
+    padding-bottom:6px;border-bottom:2px dashed #e6dcf2;}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:820px){.grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr);}}
+  .card{background:#fff;border-radius:18px;padding:10px 8px 10px;text-align:center;box-shadow:0 5px 14px rgba(64,48,79,.07);}
+  .tile{border-radius:14px;aspect-ratio:1/1;background:linear-gradient(160deg,#F3ECFF,#EDE1FF);overflow:hidden;}
+  .tile svg{width:100%;height:100%;display:block;}
+  .name{margin-top:7px;font-weight:700;font-size:11.5px;line-height:1.3;}
+
+  .footer{text-align:center;margin-top:36px;font-size:13px;color:#9a8fa4;line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Marshmallow Labs</div>
+    <h1>18 loading loops</h1>
+    <p class="sub">Each one is a self-contained 5-6 second infinite loop. The box below picks a random one every few seconds, just like it would on a real loading screen — the full set is browsable underneath.</p>
+  </header>
+
+  <div class="demo">
+    <div class="demo-label">🎲 Live random pick</div>
+    <div class="demo-stage" id="demoStage"></div>
+    <div class="demo-name" id="demoName">—</div>
+  </div>
+
+  <h2>🧪 Science mishaps</h2>
+  <div class="grid" id="grid-science"></div>
+
+  <h2>🤸 Physical comedy</h2>
+  <div class="grid" id="grid-comedy"></div>
+
+  <h2>☁️ Cozy &amp; chill</h2>
+  <div class="grid" id="grid-cozy"></div>
+
+  <h2>🎭 Playful / meta</h2>
+  <div class="grid" id="grid-playful"></div>
+
+  <h2>✨ Rare easter eggs</h2>
+  <div class="grid" id="grid-rare"></div>
+
+  <div class="footer">Each animation is fully self-contained (own SVG + CSS), so handing the whole file to Claude Code lets it extract every one as its own component and wire up random selection on each load.</div>
+</div>
+
+<script>
+/* ===================== SHARED CHARACTER TEMPLATE ===================== */
+function svgOpen(anim){
+  return `<svg viewBox="0 0 200 230" xmlns="http://www.w3.org/2000/svg" class="char" data-anim="${anim}">
+  <defs>
+    <radialGradient id="pot-${anim}" cx="0.4" cy="0.3" r="0.9"><stop offset="0" stop-color="#FFB6E1"/><stop offset="1" stop-color="#FF5FAE"/></radialGradient>
+    <clipPath id="clip-${anim}"><path d="M74 40 L74 66 L48 140 Q42 160 62 160 L138 160 Q158 160 152 140 L126 66 L126 40 Z"/></clipPath>
+  </defs>
+  <ellipse cx="100" cy="198" rx="42" ry="7" fill="rgba(64,48,79,.10)"/>`;
+}
+const LEGS = `
+  <g class="legL"><path d="M84 154 Q82 166 74 172" stroke="#fff" stroke-width="30" stroke-linecap="round" fill="none"/><ellipse cx="70" cy="175" rx="19" ry="13" fill="#fff"/></g>
+  <g class="legR"><path d="M116 154 Q118 166 126 172" stroke="#fff" stroke-width="30" stroke-linecap="round" fill="none"/><ellipse cx="130" cy="175" rx="19" ry="13" fill="#fff"/></g>`;
+const ARMS = `
+  <g class="armL"><path d="M68 96 Q50 96 46 82" stroke="#fff" stroke-width="26" stroke-linecap="round" fill="none"/><circle cx="46" cy="82" r="16" fill="#fff"/></g>
+  <g class="armR"><path d="M132 96 Q150 96 154 82" stroke="#fff" stroke-width="26" stroke-linecap="round" fill="none"/><circle cx="154" cy="82" r="16" fill="#fff"/></g>`;
+function flaskFill(){ return `<path class="flaskFill" d="M74 40 L74 66 L48 140 Q42 160 62 160 L138 160 Q158 160 152 140 L126 66 L126 40 Z" fill="#fff" fill-opacity=".55"/>`; }
+function outlineTop(){ return `<path class="flaskOutline" d="M74 40 L74 66 L48 140 Q42 160 62 160 L138 160 Q158 160 152 140 L126 66 L126 40 Z" fill="none" stroke="var(--plum)" stroke-width="7" stroke-linejoin="round"/><rect x="70" y="30" width="60" height="14" rx="7" fill="var(--plum)"/>`; }
+function topBubbles(){ return `
+  <circle class="bubbleTop1" cx="90" cy="16" r="5" fill="#fff" stroke="var(--plum)" stroke-width="2.5"/>
+  <circle class="bubbleTop2" cx="108" cy="4" r="3.4" fill="#fff" stroke="var(--plum)" stroke-width="2.2"/>
+  <circle class="bubbleTop3" cx="122" cy="16" r="2.4" fill="#fff" stroke="var(--plum)" stroke-width="2"/>`; }
+function defaultFace(){ return `
+  <circle cx="84" cy="120" r="7" fill="var(--cheek)" opacity=".8" class="cheekL"/>
+  <circle cx="116" cy="120" r="7" fill="var(--cheek)" opacity=".8" class="cheekR"/>
+  <circle cx="90" cy="106" r="5" fill="var(--plum)" class="pupilL"/>
+  <circle cx="110" cy="106" r="5" fill="var(--plum)" class="pupilR"/>
+  <circle cx="88.4" cy="104.4" r="1.6" fill="#fff"/>
+  <circle cx="108.4" cy="104.4" r="1.6" fill="#fff"/>
+  <path d="M89 124 Q100 133 111 124" stroke="var(--plum)" stroke-width="3.8" fill="none" stroke-linecap="round" class="mouth"/>`; }
+
+/* full assembler */
+function charSVG(anim, opts){
+  opts = opts || {};
+  const liquidTop = opts.liquidTop !== undefined ? opts.liquidTop : 114;
+  const liquidH = opts.liquidH !== undefined ? opts.liquidH : 50;
+  const face = opts.face !== undefined ? opts.face : defaultFace();
+  const extraInside = opts.extraInside || '';
+  const extraOutside = opts.extraOutside || '';
+  return `${svgOpen(anim)}
+  ${LEGS}
+  ${ARMS}
+  ${flaskFill()}
+  <g clip-path="url(#clip-${anim})">
+    <rect class="liquid" x="42" y="${liquidTop}" width="116" height="${liquidH}" fill="url(#pot-${anim})"/>
+    <rect x="42" y="${liquidTop}" width="116" height="7" fill="#FFD3EC" class="liquidShine"/>
+    <circle class="bubbleIn1" cx="60" cy="${liquidTop+31}" r="4" fill="#fff" opacity=".5"/>
+    <circle class="bubbleIn2" cx="132" cy="${liquidTop+36}" r="3" fill="#fff" opacity=".45"/>
+    <rect class="marshmallow" x="72" y="82" width="56" height="56" rx="22" fill="var(--cream)" stroke="rgba(64,48,79,0.22)" stroke-width="3"/>
+    ${face}
+    ${extraInside}
+  </g>
+  ${outlineTop()}
+  ${topBubbles()}
+  ${extraOutside}
+</svg>`;
+}
+
+/* ===================== ANIMATION DEFINITIONS ===================== */
+const ANIMS = [
+{key:'stir', group:'science', label:'Mixing potions',
+  build:()=>charSVG('stir', {extraInside:`<g class="spoon"><rect x="147" y="60" width="4" height="34" rx="2" fill="#C8A96A"/><ellipse cx="149" cy="58" rx="6" ry="4" fill="#C8A96A"/></g>`})},
+{key:'overflow', group:'science', label:'Bubbling over',
+  build:()=>charSVG('overflow', {extraOutside:`<circle class="droplet" cx="100" cy="40" r="3.5" fill="#FF6FB5"/>`})},
+{key:'growth', group:'science', label:'Growth spurt', build:()=>charSVG('growth')},
+{key:'colorswap', group:'science', label:'Color-swap chemistry', build:()=>charSVG('colorswap')},
+
+{key:'hiccup', group:'comedy', label:'Hiccups', build:()=>charSVG('hiccup')},
+{key:'sneeze', group:'comedy', label:'Sneeze', build:()=>charSVG('sneeze', {extraOutside:`<circle class="puff" cx="100" cy="14" r="8" fill="#fff" opacity="0"/>`})},
+{key:'dizzy', group:'comedy', label:'Dizzy spin',
+  build:()=>charSVG('dizzy', {
+    face:`
+      <circle cx="84" cy="120" r="7" fill="var(--cheek)" opacity=".8"/>
+      <circle cx="116" cy="120" r="7" fill="var(--cheek)" opacity=".8"/>
+      <path d="M85 101 L95 111 M95 101 L85 111" stroke="var(--plum)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M105 101 L115 111 M115 101 L105 111" stroke="var(--plum)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M90 126 Q100 122 110 126" stroke="var(--plum)" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    extraOutside:`<g class="orbit"><circle cx="100" cy="6" r="3" fill="var(--gold)"/><circle cx="70" cy="16" r="2.4" fill="var(--pink)"/><circle cx="130" cy="16" r="2.4" fill="#7FD858"/></g>`
+  })},
+{key:'trip', group:'comedy', label:'Trips over own legs', build:()=>charSVG('trip')},
+
+{key:'daydream', group:'cozy', label:'Daydreaming',
+  build:()=>charSVG('daydream', {
+    face:`
+      <circle cx="84" cy="120" r="7" fill="var(--cheek)" opacity=".7"/>
+      <circle cx="116" cy="120" r="7" fill="var(--cheek)" opacity=".7"/>
+      <circle class="pupilL" cx="90" cy="103" r="4.5" fill="var(--plum)"/>
+      <circle class="pupilR" cx="110" cy="103" r="4.5" fill="var(--plum)"/>
+      <path d="M92 127 Q100 130 108 127" stroke="var(--plum)" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    extraOutside:`<g class="thought">
+        <circle cx="140" cy="58" r="3" fill="#fff" stroke="var(--plum)" stroke-width="1.6"/>
+        <circle cx="150" cy="46" r="4.5" fill="#fff" stroke="var(--plum)" stroke-width="1.8"/>
+        <circle cx="164" cy="28" r="13" fill="#fff" stroke="var(--plum)" stroke-width="2"/>
+        <path d="M164 22 l1.6 3.4 3.8 0.4 -2.8 2.6 0.7 3.7 -3.3 -1.9 -3.3 1.9 0.7 -3.7 -2.8 -2.6 3.8 -0.4z" fill="var(--gold)"/>
+      </g>`
+  })},
+{key:'hum', group:'cozy', label:'Humming a tune',
+  build:()=>charSVG('hum', {extraOutside:`
+    <text class="note note1" x="150" y="60" font-family="Baloo 2" font-weight="700" font-size="16" fill="var(--pink)">♪</text>
+    <text class="note note2" x="40" y="70" font-family="Baloo 2" font-weight="700" font-size="13" fill="#A98CF0">♪</text>`})},
+{key:'nap', group:'cozy', label:'Little nap',
+  build:()=>charSVG('nap', {
+    face:`
+      <circle cx="84" cy="120" r="7" fill="var(--cheek)" opacity=".55"/>
+      <circle cx="116" cy="120" r="7" fill="var(--cheek)" opacity=".55"/>
+      <path d="M84 106 Q90 110 96 106" stroke="var(--plum)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <path d="M104 106 Q110 110 116 106" stroke="var(--plum)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="100" cy="128" rx="4" ry="3" fill="var(--plum)"/>
+      <ellipse class="glow" cx="100" cy="112" rx="34" ry="30" fill="#fff" opacity="0"/>`,
+    extraOutside:`
+      <text class="zzz z1" x="130" y="30" font-family="Baloo 2" font-weight="700" font-size="12" fill="var(--plum)" opacity=".7">z</text>
+      <text class="zzz z2" x="142" y="16" font-family="Baloo 2" font-weight="700" font-size="16" fill="var(--plum)" opacity=".6">Z</text>`
+  })},
+
+{key:'peekaboo', group:'playful', label:'Peekaboo', build:()=>charSVG('peekaboo')},
+{key:'tapglass', group:'playful', label:'Taps the glass', build:()=>charSVG('tapglass', {extraOutside:`
+    <path class="tapline t1" d="M158 96 l6 -3" stroke="var(--plum)" stroke-width="2" stroke-linecap="round" opacity="0"/>
+    <path class="tapline t2" d="M160 102 l7 0" stroke="var(--plum)" stroke-width="2" stroke-linecap="round" opacity="0"/>`})},
+{key:'bubbleblow', group:'playful', label:'Blows a bubble', build:()=>charSVG('bubbleblow', {extraOutside:`
+    <circle class="bigbubble" cx="100" cy="118" r="0" fill="#fff" opacity=".7" stroke="var(--plum)" stroke-width="1.5"/>
+    <circle class="confetti c1" cx="100" cy="118" r="2" fill="var(--pink)" opacity="0"/>
+    <circle class="confetti c2" cx="100" cy="118" r="2" fill="var(--gold)" opacity="0"/>
+    <circle class="confetti c3" cx="100" cy="118" r="2" fill="#7FD858" opacity="0"/>`})},
+{key:'juggle', group:'playful', label:'Juggling', build:()=>charSVG('juggle', {extraOutside:`
+    <g class="jugglegroup">
+      <circle class="jball j1" cx="100" cy="0" r="4" fill="var(--pink)"/>
+      <circle class="jball j2" cx="100" cy="0" r="4" fill="var(--gold)"/>
+      <circle class="jball j3" cx="100" cy="0" r="4" fill="#7FD858"/>
+    </g>`})},
+
+{key:'rainbow', group:'rare', label:'Rainbow potion ✨', build:()=>charSVG('rainbow')},
+{key:'partyhat', group:'rare', label:'Party hat cameo ✨', build:()=>charSVG('partyhat', {extraOutside:`
+    <g class="hat">
+      <path d="M100 4 L84 30 L116 30 Z" fill="var(--pink)" stroke="var(--plum)" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="100" cy="4" r="4.5" fill="var(--gold)" stroke="var(--plum)" stroke-width="2"/>
+    </g>`})},
+{key:'golden', group:'rare', label:'Golden variant ✨', build:()=>charSVG('golden', {extraOutside:`
+    <g class="sparkles">
+      <path class="spark s1" d="M40 60 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#fff"/>
+      <path class="spark s2" d="M165 80 l1.6 4.6 4.6 1.6 -4.6 1.6 -1.6 4.6 -1.6 -4.6 -4.6 -1.6 4.6 -1.6z" fill="#fff"/>
+    </g>`})},
+];
+
+/* build gallery */
+const groupTargets = {science:'grid-science', comedy:'grid-comedy', cozy:'grid-cozy', playful:'grid-playful', rare:'grid-rare'};
+ANIMS.forEach(a=>{
+  const grid = document.getElementById(groupTargets[a.group]);
+  const card = document.createElement('div'); card.className='card';
+  const tile = document.createElement('div'); tile.className='tile';
+  tile.innerHTML = a.build();
+  const name = document.createElement('div'); name.className='name'; name.textContent = a.label;
+  card.appendChild(tile); card.appendChild(name);
+  grid.appendChild(card);
+});
+
+/* live random demo */
+const demoStage = document.getElementById('demoStage');
+const demoName = document.getElementById('demoName');
+function pickRandom(){
+  const a = ANIMS[Math.floor(Math.random()*ANIMS.length)];
+  demoStage.innerHTML = a.build();
+  demoName.textContent = a.label;
+}
+pickRandom();
+setInterval(pickRandom, 5800);
+</script>
+
+<style>
+/* ============ PER-ANIMATION KEYFRAMES (6s loops unless noted) ============ */
+
+/* idle default for anything not overridden */
+.char{ animation: idleBob 3s ease-in-out infinite; }
+@keyframes idleBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2%);}}
+
+/* ---- stir ---- */
+.char[data-anim="stir"] .armR{ transform-origin:154px 82px; animation: stirRot 3s linear infinite; }
+@keyframes stirRot{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.char[data-anim="stir"] .liquid{ animation: hueCycleSlow 6s linear infinite; }
+@keyframes hueCycleSlow{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(60deg);}}
+
+/* ---- overflow ---- */
+.char[data-anim="overflow"] .liquid, .char[data-anim="overflow"] .liquidShine{
+  transform-origin:100px 164px; animation: riseFall 6s ease-in-out infinite;
+}
+@keyframes riseFall{0%,100%{transform:scaleY(1);}45%{transform:scaleY(1.22);}55%{transform:scaleY(1.22);}}
+.char[data-anim="overflow"] .droplet{ animation: dropOut 6s ease-in infinite; opacity:0; }
+@keyframes dropOut{0%,42%{opacity:0;transform:translateY(0) scale(1);}46%{opacity:1;}52%{opacity:0;transform:translateY(-26px) scale(.6);}100%{opacity:0;}}
+
+/* ---- growth ---- */
+.char[data-anim="growth"]{ animation: growPulse 6s ease-in-out infinite; }
+@keyframes growPulse{0%,60%,100%{transform:scale(1);}40%{transform:scale(1.14);}}
+
+/* ---- colorswap ---- */
+.char[data-anim="colorswap"] .liquid{ animation: hueFull 6s linear infinite; }
+@keyframes hueFull{0%{filter:hue-rotate(0deg);}100%{filter:hue-rotate(360deg);}}
+
+/* ---- hiccup ---- */
+.char[data-anim="hiccup"]{ animation: hiccupJolt 6s ease-in-out infinite; }
+@keyframes hiccupJolt{
+  0%,7%,17%{transform:translateY(0);} 4%{transform:translateY(-10px);}
+  40%,47%,57%{transform:translateY(0);} 44%{transform:translateY(-10px);}
+  75%,82%,92%{transform:translateY(0);} 79%{transform:translateY(-10px);}
+  100%{transform:translateY(0);}
+}
+.char[data-anim="hiccup"] .liquid{ animation: sloshSkew 6s ease-in-out infinite; transform-origin:100px 164px;}
+@keyframes sloshSkew{0%,7%,17%{transform:skewX(0deg);}4%{transform:skewX(4deg);}40%,47%,57%{transform:skewX(0deg);}44%{transform:skewX(-4deg);}75%,82%,92%{transform:skewX(0deg);}79%{transform:skewX(4deg);}100%{transform:skewX(0deg);}}
+
+/* ---- sneeze ---- */
+.char[data-anim="sneeze"]{ animation: sneezeMove 6s ease-in-out infinite; }
+@keyframes sneezeMove{0%,70%,100%{transform:scale(1) rotate(0deg);}76%{transform:scale(.95) rotate(-3deg);}80%{transform:scale(1.06) rotate(4deg);}86%{transform:scale(1) rotate(0deg);}}
+.char[data-anim="sneeze"] .puff{ animation: puffOut 6s ease-out infinite; }
+@keyframes puffOut{0%,78%{opacity:0;transform:scale(.3) translateY(0);}82%{opacity:.9;transform:scale(1) translateY(-6px);}92%{opacity:0;transform:scale(1.6) translateY(-16px);}100%{opacity:0;}}
+
+/* ---- dizzy ---- */
+.char[data-anim="dizzy"]{ animation: dizzyWobble 1.2s ease-in-out infinite; }
+@keyframes dizzyWobble{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
+.char[data-anim="dizzy"] .orbit{ transform-origin:100px 55px; animation: orbitSpin 2.4s linear infinite; }
+@keyframes orbitSpin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+
+/* ---- trip ---- */
+.char[data-anim="trip"]{ animation: tripBody 6s ease-in-out infinite; }
+@keyframes tripBody{0%,55%,100%{transform:translateX(0) rotate(0deg);}62%{transform:translateX(-6px) rotate(-6deg);}68%{transform:translateX(4px) rotate(4deg);}74%{transform:translateX(0) rotate(0deg);}}
+.char[data-anim="trip"] .legL{ transform-origin:70px 160px; animation: kickL 6s ease-in-out infinite; }
+@keyframes kickL{0%,58%,100%{transform:rotate(0deg);}64%{transform:rotate(-30deg);}70%{transform:rotate(10deg);}76%{transform:rotate(0deg);}}
+.char[data-anim="trip"] .armL, .char[data-anim="trip"] .armR{ animation: flailBalance 6s ease-in-out infinite; }
+.char[data-anim="trip"] .armL{transform-origin:46px 82px;} .char[data-anim="trip"] .armR{transform-origin:154px 82px;}
+@keyframes flailBalance{0%,58%,100%{transform:rotate(0deg);}64%{transform:rotate(20deg);}70%{transform:rotate(-16deg);}76%{transform:rotate(0deg);}}
+
+/* ---- daydream ---- */
+.char[data-anim="daydream"] .pupilL, .char[data-anim="daydream"] .pupilR{ animation: driftUp 6s ease-in-out infinite; }
+@keyframes driftUp{0%,15%{transform:translateY(0);}30%,80%{transform:translateY(-3px);}100%{transform:translateY(0);}}
+.char[data-anim="daydream"] .thought{ opacity:0; animation: thoughtFade 6s ease-in-out infinite; }
+@keyframes thoughtFade{0%,15%{opacity:0;transform:translateY(6px);}30%,75%{opacity:1;transform:translateY(0);}95%,100%{opacity:0;transform:translateY(-6px);}}
+
+/* ---- hum ---- */
+.char[data-anim="hum"]{ animation: humSway 1.8s ease-in-out infinite; }
+@keyframes humSway{0%,100%{transform:rotate(-2.5deg);}50%{transform:rotate(2.5deg);}}
+.char[data-anim="hum"] .note1{ animation: noteRise 3s ease-in infinite; opacity:0; }
+.char[data-anim="hum"] .note2{ animation: noteRise 3s ease-in infinite 1.5s; opacity:0; }
+@keyframes noteRise{0%{opacity:0;transform:translateY(0);}20%{opacity:1;}100%{opacity:0;transform:translateY(-22px);}}
+
+/* ---- nap ---- */
+.char[data-anim="nap"] .glow{ animation: breathe 3s ease-in-out infinite; }
+@keyframes breathe{0%,100%{opacity:.12;}50%{opacity:.32;}}
+.char[data-anim="nap"] .z1{ animation: zRise 3s ease-in infinite; opacity:0; }
+.char[data-anim="nap"] .z2{ animation: zRise 3s ease-in infinite 1.5s; opacity:0; }
+@keyframes zRise{0%{opacity:0;transform:translateY(0) scale(.8);}25%{opacity:.8;}100%{opacity:0;transform:translateY(-18px) scale(1.2);}}
+
+/* ---- peekaboo ---- */
+.char[data-anim="peekaboo"] .marshmallow, .char[data-anim="peekaboo"] .pupilL, .char[data-anim="peekaboo"] .pupilR,
+.char[data-anim="peekaboo"] .cheekL, .char[data-anim="peekaboo"] .cheekR, .char[data-anim="peekaboo"] .mouth{
+  animation: duckDown 6s ease-in-out infinite; transform-origin:100px 160px;
+}
+@keyframes duckDown{0%,20%{transform:translateY(0);}45%,65%{transform:translateY(30px);}90%,100%{transform:translateY(0);}}
+
+/* ---- tap glass ---- */
+.char[data-anim="tapglass"] .armR{ transform-origin:154px 82px; animation: tapArm 1.4s ease-in-out infinite; }
+@keyframes tapArm{0%,60%,100%{transform:translateX(0) rotate(0deg);}75%{transform:translateX(6px) rotate(-6deg);}}
+.char[data-anim="tapglass"] .tapline{ animation: tapFlash 1.4s ease-out infinite; }
+@keyframes tapFlash{0%,60%{opacity:0;}72%{opacity:.8;}90%,100%{opacity:0;}}
+
+/* ---- blow bubble ---- */
+.char[data-anim="bubbleblow"] .bigbubble{ animation: growPop 6s ease-out infinite; }
+@keyframes growPop{0%{r:0;opacity:.7;}55%{r:22;opacity:.7;}62%{r:24;opacity:0;}100%{r:0;opacity:0;}}
+.char[data-anim="bubbleblow"] .confetti{ animation: confettiPop 6s ease-out infinite; }
+.char[data-anim="bubbleblow"] .c1{ animation-delay:0s; } .char[data-anim="bubbleblow"] .c2{ animation-delay:.05s; } .char[data-anim="bubbleblow"] .c3{ animation-delay:.1s; }
+@keyframes confettiPop{0%,58%{opacity:0;transform:translate(0,0);}64%{opacity:1;}75%{opacity:0;transform:translate(18px,-22px);}100%{opacity:0;}}
+
+/* ---- juggle ---- */
+.char[data-anim="juggle"] .jugglegroup{ transform-origin:100px 50px; }
+.char[data-anim="juggle"] .j1{ animation: orbitBall 1.8s linear infinite; }
+.char[data-anim="juggle"] .j2{ animation: orbitBall 1.8s linear infinite -.6s; }
+.char[data-anim="juggle"] .j3{ animation: orbitBall 1.8s linear infinite -1.2s; }
+@keyframes orbitBall{
+  0%{transform: translate(0px,0px);}
+  25%{transform: translate(22px,-14px);}
+  50%{transform: translate(0px,-24px);}
+  75%{transform: translate(-22px,-14px);}
+  100%{transform: translate(0px,0px);}
+}
+
+/* ---- rainbow ---- */
+.char[data-anim="rainbow"] .liquid{ animation: hueFast 3s linear infinite; }
+@keyframes hueFast{0%{filter:hue-rotate(0deg) saturate(1.4);}100%{filter:hue-rotate(360deg) saturate(1.4);}}
+
+/* ---- party hat ---- */
+.char[data-anim="partyhat"] .hat{ transform-origin:100px 30px; animation: hatWiggle 1.6s ease-in-out infinite; }
+@keyframes hatWiggle{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(6deg);}}
+
+/* ---- golden ---- */
+.char[data-anim="golden"]{ filter: sepia(.5) saturate(1.7) hue-rotate(-8deg) brightness(1.05); }
+.char[data-anim="golden"] .s1{ animation: twinkle 1.4s ease-in-out infinite; }
+.char[data-anim="golden"] .s2{ animation: twinkle 1.4s ease-in-out infinite .5s; }
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.7);}50%{opacity:1;transform:scale(1.1);}}
+</style>
+</body>
+</html>

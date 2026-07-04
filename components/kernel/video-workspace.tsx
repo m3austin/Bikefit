@@ -11,6 +11,7 @@ import {
 } from "@/components/fit/video-controls";
 import { drawPoseOverlay } from "@/components/fit/draw-pose";
 import { useThemeColor } from "@/components/fit/use-theme-color";
+import { LoadingCharacter } from "@/components/kernel/loading-character";
 import {
   averageFrameVisibility,
   detectFacingSide,
@@ -487,13 +488,15 @@ export function VideoWorkspace({
       {lowConfidence ? <ConfidenceBanner /> : null}
 
       {analyzing ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface p-4">
-          <p className="text-sm text-ink" role="status">
-            Analyzing {runningNoun},{" "}
-            <span className="measurement">
-              {currentTime.toFixed(0)}s / {duration ? duration.toFixed(0) : "?"}s
-            </span>
-            . Everything stays on this device.
+        <div className="flex flex-col items-center gap-4 rounded-md border border-line bg-surface p-6">
+          <LoadingCharacter
+            expectedDurationMs={duration ? duration * 1000 : undefined}
+            label={`Analyzing ${runningNoun}, ${currentTime.toFixed(0)}s / ${
+              duration ? duration.toFixed(0) : "?"
+            }s`}
+          />
+          <p className="text-xs text-ink-muted">
+            Everything stays on this device.
           </p>
           <Button variant="outline" onClick={cancelAnalysis}>
             <X />
