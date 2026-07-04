@@ -1,6 +1,6 @@
 # BikeFit - User Flows
 
-Version 1.0 | 2026-07-03 | Canonical source of truth for flows. Build every branch and every empty/loading/error/offline state shown here. When a flow's behaviour changes, update its diagram in the same PR. A flow that doesn't match the build is a defect.
+Version 1.1 | 2026-07-04 | Canonical source of truth for flows. Build every branch and every empty/loading/error/offline state shown here. When a flow's behaviour changes, update its diagram in the same PR. A flow that doesn't match the build is a defect.
 
 ---
 
@@ -8,13 +8,15 @@ Version 1.0 | 2026-07-03 | Canonical source of truth for flows. Build every bran
 
 ```mermaid
 flowchart TD
-    L["/ Landing"] -->|Start your fit| W["/fit/new Wizard"]
+    L["/ Landing"] -->|Start your fit| C["/fit Chooser: Quick Fit or Video Fit Analysis"]
+    C -->|Quick Fit| W["/fit/new Wizard"]
+    C -->|Video Fit Analysis| V["/fit/video Video analysis"]
     L -->|How it works| M["/method Methodology"]
     L -->|Welcome-back card| R["/fit/:id Results"]
     W -->|Calculate| R
     R -->|Save fit| G["/fits Saved fits"]
     G -->|Open| R
-    G -->|New fit| W
+    G -->|New fit| C
     L --> S["/settings"]
     S -.->|v1.1| A["Account and sync"]
 ```
@@ -185,3 +187,74 @@ flowchart TD
     E["Unexpected render error"] --> F["Route error boundary: friendly message + reload + data is safe reassurance"]
     G["IndexedDB unavailable (private mode edge case)"] --> H["In-memory fallback + banner: results won't persist on this device"]
 ```
+
+Exception: Video Fit Analysis needs network on its FIRST use per device (the pose model downloads from a public CDN, cached afterward). The rider's video itself never leaves the device. See Flow 9.
+
+---
+
+## Flow 9: Video Fit Analysis (side view, required)
+
+```mermaid
+flowchart TD
+    A["/fit chooser"] -->|Video Fit Analysis| B["/fit/video intro: side-view upload + recording tips"]
+    B -->|Unsupported file type| C["Inline error, nothing changes"]
+    C --> B
+    B -->|Side video chosen| D["Two-slot layout: side workspace + optional front slot + discomfort question"]
+    D --> E{"Pose tracker loads: CDN fetch, first use per device only"}
+    E -->|Fails| F["Error note + Try again; playback still works without tracking"]
+    F -->|Retry| E
+    E -->|Ready| G["Skeleton overlay synced to playback + facing-side vote + live confidence"]
+    G -->|Confidence stays low| H["Banner: lighting, side-on camera, fitted clothing"]
+    D -->|Play / pause / scrub / 0.25x| G
+    D -->|Analyze pedal strokes| I["Plays through once, collecting frames on this device"]
+    I -->|Cancel| D
+    I -->|Fewer than 2 strokes| J["Failed note: record steady, seated, side-on revolutions"]
+    J --> D
+    I -->|Done| K["Results section (Flow 11) + timeline ticks with next-BDC / next-3-o'clock jumps"]
+    D -->|Choose a different video| B
+```
+
+Rules: the video file is NEVER uploaded anywhere (no fetch/XHR of it, no server route). Analysis caps at 60 s / 3600 frames. The wizard-side rules (never hard-block, non-blaming copy) apply throughout.
+
+---
+
+## Flow 10: Front or rear view (optional companion)
+
+```mermaid
+flowchart TD
+    A["Side workspace on screen"] --> B["Front or rear view slot: guidance + compact dropzone"]
+    B -->|Straight-on video chosen| C["Second workspace: overlay + confidence, NO facing-side vote"]
+    C -->|Analyze knee tracking| D["Plays through once: knee tracking, symmetry, hip drop"]
+    D -->|Fewer than 2 strokes per leg| E["Failed note: both feet in frame, straight-on, steady pedaling"]
+    E --> C
+    D -->|Done| F["Frontal report joins the results section (Flow 11)"]
+    C -->|Remove front video| B
+    A --> G["Discomfort question: optional multi-select, None exclusive both ways"]
+    G --> H["Kept with the analysis input for future guidance; consumed by nothing yet"]
+```
+
+Rules: facing-side detection never runs on a straight-on view (it assumes one side is occluded). Each on-screen video owns its own pose-landmarker instance.
+
+---
+
+## Flow 11: Video results and recommendations
+
+```mermaid
+flowchart TD
+    A{"Which analyses exist?"} -->|Side only| B["Heading: Fit analysis"]
+    A -->|Side + frontal| C["Heading: Complete Fit Analysis"]
+    A -->|Frontal only| D["Complete section + prompt to run the side analysis"]
+    B --> E["Rules engine over the measurements (lib/fit-rules.ts)"]
+    C --> E
+    D --> E
+    E -->|Nothing triggered| F["All-clear card: everything inside its target range"]
+    E -->|Findings| G["ONE primary recommendation, prominent, with confidence chip"]
+    G --> H["Secondary findings listed below, one at a time"]
+    E --> I["Verdict cards: measured value on target band, in / marginal / out"]
+    I --> J["Detail tables: sagittal angles + frontal tracking"]
+    G --> K["Retest checklist: one change, settle, re-record same view, compare"]
+    J --> L["Disclaimer: guidance, not a professional bike fit; persistent pain means a professional bike fitter or physician"]
+    M["New analysis starts or video replaced"] --> N["Stale report cleared; section updates or disappears"]
+```
+
+Rules: one change at a time (single primary, rest secondary; deterministic by priority then rule order). Every target range and magnitude in `lib/fit-rules.ts` is a PLACEHOLDER pending owner-confirmed values; no session may tune them silently.

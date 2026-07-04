@@ -9,6 +9,12 @@ engine with locked golden tests, results + print fit sheet, saved fits, settings
 with export/import, offline PWA, an accessibility pass, and optional Supabase
 sync. Ready to deploy per [docs/Launch.md](docs/Launch.md).
 
+v1.2 adds Video Fit Analysis: side-view (required) plus straight-on (optional)
+trainer videos, pose-tracked entirely in the browser (the video never leaves
+the device), with per-stroke joint angles, knee tracking and symmetry, and a
+one-change-at-a-time rules engine. NOTE: the target ranges in
+`lib/fit-rules.ts` are placeholders pending confirmed values.
+
 Run locally: `npm install`, then `npm run dev`. Gates: `npm run lint`,
 `npx tsc --noEmit`, `npm run test`, `npm run build`, `npm run e2e`.
 

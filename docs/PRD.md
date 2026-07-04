@@ -68,8 +68,13 @@ Design rule: Fiona drives the default experience; Sam gets progressive disclosur
 |---|---------|---------|
 | F8 | Optional account sync | Supabase email magic-link / OAuth. Local data uploads on first sign-in; last-write-wins sync; sign out never deletes local data |
 
+### Shipped post-launch: Video Fit Analysis (v1.2, 2026-07)
+| # | Feature | Summary |
+|---|---------|---------|
+| F9 | Video Fit Analysis | `/fit` chooses between Quick Fit (F1-F7, unchanged) and video analysis: a side-view trainer video (required) and a straight-on view (optional) are pose-tracked 100% client-side (MediaPipe lite, video never uploaded). Extracts sagittal joint angles per pedal stroke plus frontal knee tracking, symmetry, and hip drop; a deterministic rules engine surfaces one primary adjustment at a time with verdicts per metric. Governing rules live in the repo CLAUDE.md (video fit analysis section); flows are User-Flows.md Flows 9-11. CAVEAT: every target range and magnitude in `lib/fit-rules.ts` is a PLACEHOLDER pending owner-confirmed sourced values. |
+
 ### Explicitly deferred
-Adjustment logbook, joint-angle photo analysis, saddle/shoe product recommendations, community sharing, localisation beyond English.
+Adjustment logbook, saddle/shoe product recommendations, community sharing, localisation beyond English.
 
 ---
 
@@ -199,7 +204,7 @@ Supabase free tier. Tables `profiles` and `fits` mirroring the local schema, RLS
 ---
 
 ## 10. Future candidates (parking lot, not commitments)
-Adjustment logbook per bike; photo joint-angle estimation (MediaPipe pose, still client-side and free); TT/tri bike type; saddle pressure discomfort troubleshooter; share-a-fit read-only links; multi-language.
+Adjustment logbook per bike; TT/tri bike type; saddle pressure discomfort troubleshooter; share-a-fit read-only links; multi-language. (Video joint-angle analysis shipped as F9; remaining video candidates: persisting video analyses to the garage, discomfort-aware rules, per-leg key frames for the front view.)
 
 ---
 
