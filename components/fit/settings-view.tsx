@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, TriangleAlert, Upload } from "lucide-react";
+import { Download, Heart, TriangleAlert, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { AccountSection } from "@/components/fit/account-section";
 import { useToast } from "@/components/toast-provider";
 import { ENGINE_VERSION } from "@/lib/engine";
+import { supportUrl } from "@/lib/support";
 import { isTheme } from "@/lib/theme";
 import { useTheme } from "@/components/theme-provider";
 import { useUnit } from "@/components/unit-provider";
@@ -33,13 +34,18 @@ function Section({
   title,
   description,
   children,
+  id,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
+  id?: string;
 }) {
   return (
-    <section className="flex flex-col gap-4 border-t border-line py-8 first:border-t-0 first:pt-0">
+    <section
+      id={id}
+      className="flex scroll-mt-20 flex-col gap-4 border-t border-line py-8 first:border-t-0 first:pt-0"
+    >
       <div className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         {description ? (
@@ -157,6 +163,7 @@ export function SettingsView() {
 
   const canErase = eraseText.trim().toLowerCase() === "erase";
   const persistence = isPersistenceAvailable();
+  const supportLink = supportUrl();
 
   return (
     <div className="flex flex-col">
@@ -270,6 +277,27 @@ export function SettingsView() {
           </Button>
         </div>
       </Section>
+
+      {supportLink ? (
+        <Section
+          id="support"
+          title="Support BikeFit"
+          description="Free, no ads, nothing to buy, and it stays that way. If BikeFit helped you get comfortable on your bike and you would like to help cover the hosting, you can leave a small tip. Every feature stays free for everyone either way."
+        >
+          <div className="flex flex-col gap-3">
+            <Button asChild variant="outline" className="self-start">
+              <a href={supportLink} target="_blank" rel="noopener noreferrer">
+                <Heart />
+                Leave a tip
+              </a>
+            </Button>
+            <p className="text-xs text-ink-muted">
+              Payments go through Stripe on their site. BikeFit never sees
+              your card details.
+            </p>
+          </div>
+        </Section>
+      ) : null}
 
       <Section title="About">
         <p className="text-sm text-ink-muted">

@@ -54,6 +54,9 @@ export type AppSettings = {
   id: string; // singleton: SETTINGS_ID
   units?: Unit;
   theme?: string;
+  /** Tip-jar note state (lib/support.ts): "No thanks" is honored forever. */
+  supportDismissed?: boolean;
+  supportLastShownMs?: number;
 };
 
 /** A deleted fit's id, kept so a delete can propagate to the cloud (Flow 7). */

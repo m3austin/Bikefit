@@ -36,6 +36,13 @@ runs with no backend, and sync is an optional mirror.
    - `NEXT_PUBLIC_SUPABASE_URL` = `https://phtrxxkbzfffiysadwdr.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = `sb_publishable_UGPDKzFtLjtaON2IGKYhLw_Rru-6dXa`
      (publishable key, safe to expose; RLS protects the data)
+   - `NEXT_PUBLIC_SUPPORT_URL` (optional) = your Stripe Payment Link for the
+     tip jar. To create it: Stripe dashboard -> Payment Links -> New -> choose
+     "Customers choose what to pay", name it (e.g. "Support BikeFit"), set a
+     sensible minimum, create, and copy the `https://donate.stripe.com/...`
+     or `https://buy.stripe.com/...` URL. Leave the variable unset and every
+     trace of the tip jar stays hidden. It is a public URL, safe to expose;
+     no Stripe secret key goes anywhere near this app.
 4. **Deploy.** Every future PR gets a preview URL; merges to `main` deploy production.
 5. (Optional) Buy a domain and point it in Vercel's domain settings, then update
    `NEXT_PUBLIC_SITE_URL` to match and redeploy.

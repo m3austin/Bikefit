@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FitSummaryCard } from "@/components/fit/fit-summary-card";
+import { SupportNote } from "@/components/fit/support-note";
 import { useConfirmDelete } from "@/components/fit/use-confirm-delete";
 import { useUnit } from "@/components/unit-provider";
 import {
@@ -206,6 +207,8 @@ export function SavedFits() {
           />
         ))}
       </div>
+
+      <SupportNote savedFitCount={fits.length} />
 
       {deleteDialog}
     </div>

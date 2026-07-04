@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Calculator, Ruler, Wrench } from "lucide-react";
 
 import { LandingHero } from "@/components/fit/landing";
+import { supportUrl } from "@/lib/support";
 
 // The hero is a small client island (welcome-back check); everything else is
 // server-rendered, so it ships no client JS (keeps landing JS lean, PRD §8).
@@ -67,9 +68,19 @@ export default function HomePage() {
         </p>
       </section>
 
-      <footer className="border-t border-line pt-6 text-sm text-ink-muted">
-        No cookies, no tracking, no account. Your data stays in this browser
-        unless you export it.
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 text-sm text-ink-muted">
+        <span>
+          No cookies, no tracking, no account. Your data stays in this browser
+          unless you export it.
+        </span>
+        {supportUrl() ? (
+          <Link
+            href="/settings#support"
+            className="underline underline-offset-2 hover:text-ink"
+          >
+            Support BikeFit
+          </Link>
+        ) : null}
       </footer>
     </div>
   );
