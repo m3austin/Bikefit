@@ -48,11 +48,15 @@ journey is **3 to 4 weeks**, most of it waiting.
 
 ### Part 2: build the Android app (an afternoon, free)
 
-4. **Icons: DONE.** The manifest now serves PNG icons including the 512 px
-   maskable one Android requires (`/icon-512.png`,
-   `/icon-512-maskable.png`). Go to **pwabuilder.com**, enter the
-   production URL, and let it score the site (manifest, service worker,
-   and icons all pass).
+4. **Icons: WIRING DONE, ART STALE.** The manifest serves PNG icons
+   including the 512 px maskable one Android requires (`/icon-192.png`,
+   `/icon-512.png`, `/icon-512-maskable.png`), so PWABuilder will pass its
+   icon check. BUT the art is still the old BikeFit bicycle on green: it
+   must be replaced with a SportFits icon before listing (a multi-sport app
+   should not ship a bicycle mark). Regenerate all three PNGs from the new
+   icon, keep the same filenames, and deploy. Then go to **pwabuilder.com**,
+   enter the production URL, and let it score the site (manifest, service
+   worker, and icons all pass).
 5. Click **Package for stores -> Android**. PWABuilder generates a signed
    `.aab` (Android App Bundle) plus a **signing key file and passwords.
    Save these somewhere safe**; losing them means losing the ability to
@@ -66,12 +70,16 @@ journey is **3 to 4 weeks**, most of it waiting.
 
 ### Part 3: the Play Console listing (an evening)
 
-7. **Listing assets: DONE.** `store-assets/` in the repo holds six
-   1080x1920 phone screenshots (the SportFits hub sport-picker, plus a
-   couple of modules: a cycling result, a golf or running analysis) and
-   the 1024x500 feature graphic; the 512 px icon is `public/icon-512.png`.
-   Use the SportFits name and icon for the listing. In the Play Console:
-   **Create app**, fill in the store listing (name, short and full
+7. **Listing assets: STALE, NEED SPORTFITS REFRESH.** `store-assets/` holds
+   a feature graphic and six screenshots, but they are all BikeFit-era: the
+   feature graphic reads "BikeFit / Fit your bike to your body" with the
+   bicycle icon, and the screenshots are the old cycling wizard/adjust/method
+   flow, captured before the multi-sport hub and the scored dashboard
+   existed. Before listing, replace them with SportFits assets: a rebranded
+   1024x500 feature graphic, and 1080x1920 screenshots of the current app
+   (the hub sport-picker, a scored results dashboard, the rabbit hole, a
+   drill guide with its "what good looks like" figure). Then in the Play
+   Console: **Create app**, fill in the store listing (name, short and full
    descriptions) and upload those files.
 8. Complete the questionnaires: **content rating** (SportFits rates
    Everyone), **target audience**, **data safety** (declare: no data
