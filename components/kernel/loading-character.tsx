@@ -26,6 +26,7 @@ export function LoadingCharacter({
   animation,
   expectedDurationMs,
   label,
+  srStatus,
   size = 168,
   className,
 }: {
@@ -33,8 +34,12 @@ export function LoadingCharacter({
   animation?: AnimationKey;
   /** Likely load duration; gates whether a rare easter egg is eligible. */
   expectedDurationMs?: number;
-  /** Optional caption under the character. */
+  /** Visible caption. May tick (e.g. an elapsed counter); it is decorative,
+   * so a changing value never spams assistive tech. */
   label?: string;
+  /** Stable message announced once to screen readers. Keep it fixed even when
+   * `label` ticks. Defaults to a generic "Loading." */
+  srStatus?: string;
   /** Max width of the character stage in px. */
   size?: number;
   className?: string;
@@ -61,11 +66,7 @@ export function LoadingCharacter({
   }, [resolved]);
 
   return (
-    <div
-      className={cn("ml-loading flex flex-col items-center gap-3", className)}
-      role="status"
-      aria-live="polite"
-    >
+    <div className={cn("ml-loading flex flex-col items-center gap-3", className)}>
       {/* Hoisted, deduped by href across every LoadingCharacter instance. */}
       <style href="ml-loading-animations" precedence="default">
         {ANIMATION_CSS}
@@ -76,7 +77,14 @@ export function LoadingCharacter({
         aria-hidden="true"
         dangerouslySetInnerHTML={{ __html: html }}
       />
-      <span className="text-sm text-ink-muted">{label ?? "Working on it..."}</span>
+      {/* Visible caption is decorative so a ticking value is not announced
+          repeatedly; the stable status below is what screen readers hear. */}
+      <span className="text-sm text-ink-muted" aria-hidden="true">
+        {label ?? "Working on it..."}
+      </span>
+      <span className="sr-only" role="status">
+        {srStatus ?? "Loading."}
+      </span>
     </div>
   );
 }

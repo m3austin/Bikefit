@@ -494,6 +494,7 @@ export function VideoWorkspace({
             label={`Analyzing ${runningNoun}, ${currentTime.toFixed(0)}s / ${
               duration ? duration.toFixed(0) : "?"
             }s`}
+            srStatus={`Analyzing ${runningNoun}. This stays on your device.`}
           />
           <p className="text-xs text-ink-muted">
             Everything stays on this device.
