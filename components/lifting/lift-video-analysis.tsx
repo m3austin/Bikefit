@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 import { VideoDropzone } from "@/components/fit/video-dropzone";
+import { CameraSetupDiagram } from "@/components/kernel/camera-setup";
 import {
   VideoWorkspace,
   type AnalyzeOutcome,
@@ -125,6 +126,8 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
           prompt={`Drag a side-on ${config.name.toLowerCase()} video here, or choose a file`}
           chooseLabel="Choose video"
         />
+
+        <CameraSetupDiagram view="lifting-side" className="sm:max-w-sm" />
 
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
           <h2 className="text-sm font-medium text-ink">

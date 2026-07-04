@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { VideoDropzone } from "@/components/fit/video-dropzone";
+import { CameraSetupDiagram } from "@/components/kernel/camera-setup";
 import {
   VideoWorkspace,
   type AnalyzeOutcome,
@@ -46,7 +47,6 @@ function useVideoSlot() {
 
 const TIPS = [
   "One full swing per clip, with a second of stillness at address before you start. The stillness is how the analysis finds your setup.",
-  "Down the line: camera behind you, looking along the target line, level with your hands. Face on: directly in front, perpendicular to the line.",
   "Tripod or a propped phone; whole body and club in frame through the finish.",
   "Good, even light. Golf happens outside, which helps.",
 ];
@@ -142,6 +142,11 @@ export function GolfVideoAnalysis() {
           prompt="Drag a down-the-line video here, or choose a file"
           chooseLabel="Choose video"
         />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CameraSetupDiagram view="golf-dtl" />
+          <CameraSetupDiagram view="golf-face" />
+        </div>
 
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
           <h2 className="text-sm font-medium text-ink">

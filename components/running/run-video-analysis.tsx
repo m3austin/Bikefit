@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { VideoDropzone } from "@/components/fit/video-dropzone";
+import { CameraSetupDiagram } from "@/components/kernel/camera-setup";
 import {
   VideoWorkspace,
   type AnalyzeOutcome,
@@ -48,8 +49,7 @@ function useVideoSlot() {
 
 const TIPS = [
   "Ten to fifteen seconds of steady, comfortable running is plenty. Warm up first so it is your normal stride.",
-  "Side on: camera level with your hips, square to the treadmill, whole body in frame. A tripod or a propped phone beats a handheld friend.",
-  "Rear view (optional): directly behind, same height. It adds the hip-drop reading the side view cannot see.",
+  "A tripod or a propped phone beats a handheld friend, and the whole body should stay in frame.",
   "Treadmill strongly preferred: the fixed frame is what makes the numbers trustworthy. Outdoors works only if the camera does not move.",
 ];
 
@@ -161,6 +161,11 @@ export function RunVideoAnalysis() {
           prompt="Drag a side-on running video here, or choose a file"
           chooseLabel="Choose video"
         />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <CameraSetupDiagram view="running-side" />
+          <CameraSetupDiagram view="running-rear" />
+        </div>
 
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
           <h2 className="text-sm font-medium text-ink">

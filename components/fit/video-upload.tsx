@@ -1,9 +1,9 @@
 "use client";
 
 import { VideoDropzone } from "@/components/fit/video-dropzone";
+import { CameraSetupDiagram } from "@/components/kernel/camera-setup";
 
 const TIPS = [
-  "Film from directly to the side, level with the bike, not from above or below.",
   "Good, even lighting: avoid strong backlight from a window behind the rider.",
   "Fitted or tucked-in clothing so the camera can see hip, knee, and ankle clearly.",
   "Aim for 15 to 20 seconds of steady, seated pedaling at your normal cadence. Under 8 seconds is too little to average; past 30 seconds, tiring form starts muddying the numbers.",
@@ -38,6 +38,8 @@ export function VideoUpload({
       </div>
 
       <VideoDropzone onSelect={onSelect} />
+
+      <CameraSetupDiagram view="cycling-side" className="sm:max-w-sm" />
 
       <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
         <h2 className="text-sm font-medium text-ink">

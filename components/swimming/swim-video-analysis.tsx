@@ -7,6 +7,7 @@ import {
   VideoWorkspace,
   type AnalyzeOutcome,
 } from "@/components/kernel/video-workspace";
+import { CameraSetupDiagram } from "@/components/kernel/camera-setup";
 import { SwimBetaNote } from "@/components/swimming/swim-beta-note";
 import { SwimResultsSection } from "@/components/swimming/swim-results";
 import type { TimedFrame } from "@/lib/kernel/tracking";
@@ -25,7 +26,6 @@ import {
 type Slot = { file: File; url: string };
 
 const TIPS = [
-  "Film from the pool deck, side on, with the swimmer in the near lane.",
   "A few strokes in clear, settled water beat a long noisy clip. Splash and bubbles are what cost the reading.",
   "Camera low and close to the surface if you safely can; keep it still.",
   "Above water only. Underwater housings and the model do not get along yet.",
@@ -103,6 +103,8 @@ export function SwimVideoAnalysis() {
           prompt="Drag a side-on swimming video here, or choose a file"
           chooseLabel="Choose video"
         />
+
+        <CameraSetupDiagram view="swimming-side" className="sm:max-w-sm" />
 
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
           <h2 className="text-sm font-medium text-ink">
