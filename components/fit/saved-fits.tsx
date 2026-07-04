@@ -16,6 +16,7 @@ import {
 import { FitSummaryCard } from "@/components/fit/fit-summary-card";
 import { SupportNote } from "@/components/fit/support-note";
 import { useConfirmDelete } from "@/components/fit/use-confirm-delete";
+import { Mascot, type MascotPose } from "@/components/mascot/mascot";
 import { useUnit } from "@/components/unit-provider";
 import {
   deleteFit,
@@ -124,7 +125,7 @@ export function SavedFits() {
   if (fits.length === 0) {
     return (
       <StateBlock
-        icon
+        mascot="cycling"
         title="No saved fits yet"
         body="When you calculate a fit and save it, it lands here so you can open, rename, or re-run it later."
       >
@@ -232,16 +233,21 @@ function StateBlock({
   title,
   body,
   icon,
+  mascot,
   children,
 }: {
   title: string;
   body: string;
   icon?: boolean;
+  /** A Tier 2 mascot moment (empty states); wins over the plain icon. */
+  mascot?: MascotPose;
   children: React.ReactNode;
 }) {
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-12 text-center">
-      {icon ? (
+      {mascot ? (
+        <Mascot pose={mascot} size={72} />
+      ) : icon ? (
         <div className="grid size-16 place-items-center rounded-full bg-surface-2 text-accent">
           <Bike className="size-8" aria-hidden="true" />
         </div>

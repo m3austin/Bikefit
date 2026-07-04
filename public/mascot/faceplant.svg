@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' role='img' aria-label='Marshmallow faceplant (placeholder)' data-placeholder='true'>
+  <title>Marshmallow faceplant (placeholder)</title>
+  <!-- PLACEHOLDER Marshmallow Labs mascot (docs/sportfit/04 s4). Replace with final art. -->
+  <rect x='26' y='58' width='48' height='26' rx='12' fill='#F5EFE6' stroke='#5B3A5B' stroke-width='3'/>
+  <path d='M40 66 l6 6 M46 66 l-6 6' stroke='#5B3A5B' stroke-width='2.4' stroke-linecap='round'/>
+  <path d='M54 66 l6 6 M60 66 l-6 6' stroke='#5B3A5B' stroke-width='2.4' stroke-linecap='round'/>
+  <path d='M30 52 q4 6 10 4 M70 52 q-4 6 -10 4' fill='none' stroke='#5B3A5B' stroke-width='2.4' stroke-linecap='round'/>
+</svg>

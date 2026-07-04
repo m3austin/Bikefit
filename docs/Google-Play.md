@@ -1,6 +1,8 @@
-# Getting BikeFit into the Google Play Store, in plain language
+# Getting SportFits into the Google Play Store, in plain language
 
-Written 2026-07-04. BikeFit is a web app, and Google Play accepts web apps
+Written 2026-07-04, updated for the SportFits rebrand (the app is now
+**SportFits**; BikeFit is its cycling module). List it under the SportFits
+name and icon, not BikeFit. SportFits is a web app, and Google Play accepts web apps
 through a thin Android wrapper called a **Trusted Web Activity (TWA)**: a
 real, installable Android app that simply displays your live website
 full-screen, no browser bar. The website stays the single thing you
@@ -65,12 +67,13 @@ journey is **3 to 4 weeks**, most of it waiting.
 ### Part 3: the Play Console listing (an evening)
 
 7. **Listing assets: DONE.** `store-assets/` in the repo holds six
-   1080x1920 phone screenshots (landing, wizard, results, adjustment
-   guide, video analysis, method) and the 1024x500 feature graphic; the
-   512 px icon is `public/icon-512.png`. In the Play Console: **Create
-   app**, fill in the store listing (name, short and full descriptions)
-   and upload those files.
-8. Complete the questionnaires: **content rating** (BikeFit rates
+   1080x1920 phone screenshots (the SportFits hub sport-picker, plus a
+   couple of modules: a cycling result, a golf or running analysis) and
+   the 1024x500 feature graphic; the 512 px icon is `public/icon-512.png`.
+   Use the SportFits name and icon for the listing. In the Play Console:
+   **Create app**, fill in the store listing (name, short and full
+   descriptions) and upload those files.
+8. Complete the questionnaires: **content rating** (SportFits rates
    Everyone), **target audience**, **data safety** (declare: no data
    collected by default; optional account sync stores email and fit data;
    nothing shared with third parties), and paste the privacy policy URL.
@@ -88,7 +91,7 @@ journey is **3 to 4 weeks**, most of it waiting.
 ## Ongoing maintenance: almost none
 
 - The app displays the live site, so **normal site deploys need nothing**
-  in Play. Riders always have the latest version.
+  in Play. Everyone always has the latest version.
 - You only touch the Play Console again if the manifest identity changes
   (name, icons, colors) or Google raises its target API level (roughly a
   yearly re-package with PWABuilder, upload, done).

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Mascot } from "@/components/mascot/mascot";
 import { cn } from "@/lib/utils";
 import type { Confidence, Finding } from "@/lib/kernel/rules";
 
@@ -47,14 +48,14 @@ export function FitRecommendations({
   allClearNote?: string;
 }) {
   if (!primary) {
+    // Tier 3 earned delight (docs/sportfit/04 s4): the everything-in-range
+    // state is a celebration, not a results number, so the mascot belongs.
     return (
-      <div className="flex gap-3 rounded-md border border-accent/40 bg-accent/10 p-5">
-        <CheckCircle2
-          className="mt-0.5 shrink-0 text-accent"
-          aria-hidden="true"
-        />
+      <div className="flex items-center gap-3 rounded-md border border-accent/40 bg-accent/10 p-5">
+        <Mascot pose="cheer" size={52} className="shrink-0" />
         <div className="space-y-1 text-sm">
-          <p className="font-medium text-ink">
+          <p className="flex items-center gap-2 font-medium text-ink">
+            <CheckCircle2 className="size-4 text-accent" aria-hidden="true" />
             Everything we measured sits inside its target range
           </p>
           <p className="text-ink-muted">{allClearNote}</p>

@@ -4,6 +4,7 @@ import { Camera, Ruler, Wrench } from "lucide-react";
 
 import { LandingHero } from "@/components/fit/landing";
 import { SupportFooterLink } from "@/components/fit/support-footer-link";
+import { MascotEasterEgg } from "@/components/mascot/mascot-easter-egg";
 import { SPORTS } from "@/lib/sports/registry";
 
 /*
@@ -135,6 +136,7 @@ export default function HomePage() {
             className="rounded-[5px]"
           />
           A Marshmallow Labs experiment. No tracking, no account required.
+          <MascotEasterEgg size={28} />
         </span>
         <span className="flex items-center gap-4">
           <Link
