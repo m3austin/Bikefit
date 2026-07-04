@@ -16,14 +16,19 @@
  */
 
 import {
-  argmaxSpeed,
-  argminSpeedBetween,
-  computeSpeedSeries,
-  firstSustainedAbove,
-  firstSustainedBelow,
-  type MotionSample,
+  argmaxIndexBetween,
+  argminIndexBetween,
+  firstSustainedAboveIdx,
+  firstSustainedBelowIdx,
+  lastStillEndBefore,
+  speedsFromTrack,
 } from "@/lib/kernel/events";
-import { interiorAngleDeg, type Point2 } from "@/lib/kernel/geometry";
+import {
+  interiorAngleDeg,
+  medianFilter,
+  movingAverage,
+  type Point2,
+} from "@/lib/kernel/geometry";
 import { METRIC_VISIBILITY_FLOOR, type TimedFrame } from "@/lib/kernel/tracking";
 import { LANDMARK, type PoseFrame } from "@/lib/pose-model";
 
@@ -112,24 +117,41 @@ export function computeGolfFrameMetrics(
 
 /**
  * PLACEHOLDER: data-quality tunings (unsourced engineering defaults) for
- * phase detection. Thresholds are fractions of the swing's own peak wrist
- * speed, so they are scale- and resolution-invariant.
+ * phase detection. Speed thresholds are fractions of the swing's own peak
+ * wrist speed and distances are fractions of torso length, so everything is
+ * scale- and resolution-invariant.
  */
 export const SWING_SEGMENTATION = {
+  /** Median window (position de-glitch) and mean window (speed smoothing). */
+  medianWindow: 5,
   smoothWindow: 5,
-  /** Sustained motion above this fraction of peak speed starts the takeaway. */
-  startFraction: 0.15,
-  /** Motion must stay above/below thresholds this long to count. */
-  sustainMs: 100,
   minSamples: 20,
-  /** Address-to-impact must take at least this long to be a real swing. */
-  minSwingMs: 400,
-  /** The top must be a real pause: its speed at most this fraction of peak. */
-  topFraction: 0.5,
-  /** A real backswing and downswing each take time; smoothing-edge minima
-   * hugging the takeaway must not pass as a top. */
+  /** Tracking gaps longer than this contribute no speed reading. */
+  maxGapMs: 250,
+  /** Impact is the hands-lowest moment within this window of the speed peak. */
+  impactRefineMs: 150,
+  // ponytail: a fixed backswing window; a practice swing topping out within
+  // 2 s of impact could still steal the top. Template-match the full
+  // rise-fall shape if that shows up in real footage.
+  maxBackswingMs: 2000,
+  /** A real backswing and downswing each take time. */
   minBackswingMs: 300,
   minDownswingMs: 100,
+  /** Hands must rise at least this fraction of torso length from impact to
+   * the top for the clip to read as a full swing. */
+  minTopRiseFrac: 0.25,
+  /** Address stillness: speed under this fraction of peak, held stillMs. */
+  stillFraction: 0.05,
+  stillMs: 250,
+  /** Takeaway: wrists displaced from address by this fraction of torso. */
+  takeawayFrac: 0.08,
+  /** Motion must stay above/below thresholds this long to count. */
+  sustainMs: 100,
+  /** Follow-through settles when speed stays under this fraction of peak;
+   * also the speed-based takeaway fallback when torso length is unreadable. */
+  settleFraction: 0.15,
+  /** Address-to-impact must take at least this long to be a real swing. */
+  minSwingMs: 400,
 };
 
 export type SwingPhases = {
@@ -144,106 +166,167 @@ export type PhaseDetection =
   | { ok: true; phases: SwingPhases }
   | { ok: false; reason: string };
 
+const NO_HANDS =
+  "We couldn't see your hands for enough of the video to read a swing.";
+const NO_SWING = "We couldn't find a swing in this video.";
+const NO_TAKEAWAY =
+  "We couldn't separate the takeaway from the strike. Start the clip with a second of stillness at address.";
+const BLURRED =
+  "The backswing and downswing blur together in this clip. A steadier camera or better light usually fixes it.";
+const TOO_QUICK =
+  "That looked too quick to be a full swing. Film a complete swing from address to finish.";
+
 /**
- * Detect the five swing phases from the wrist track. Impact is the wrist
- * speed peak; takeaway is the first sustained motion; the top is the speed
- * minimum between them (the pause and reversal); address is the stillest
- * moment before the takeaway; follow-through ends when motion settles.
+ * Detect the five swing phases. The anchors are the wrist TRAJECTORY, with
+ * speed only where it is reliable, because on real footage a single-frame
+ * tracker glitch out-spikes the swing and waggles or practice swings pass a
+ * pure speed heuristic:
+ *
+ * 1. Impact: the hands-lowest moment near the (de-glitched) speed peak.
+ * 2. Top: the hands-highest moment in the backswing window before impact.
+ * 3. Address: the end of the LAST sustained-still window before the top, so
+ *    a re-address after a practice swing beats the walk-in stillness.
+ * 4. Takeaway: the first sustained wrist DISPLACEMENT from the address
+ *    position (jitter oscillates; a takeaway leaves and stays gone).
+ * 5. Follow-through: when motion settles after impact.
  */
 export function detectSwingPhases(
   samples: readonly GolfTimedMetrics[],
   options = SWING_SEGMENTATION,
 ): PhaseDetection {
-  const motion: MotionSample[] = samples.map((s) => ({
-    tMs: s.tMs,
-    pos: s.metrics.wristPos,
-  }));
-  const series = computeSpeedSeries(motion, options.smoothWindow);
-  if (series.length < options.minSamples) {
-    return {
-      ok: false,
-      reason:
-        "We couldn't see your hands for enough of the video to read a swing.",
-    };
-  }
+  const fail = (reason: string): PhaseDetection => ({ ok: false, reason });
 
-  const peakSeriesIdx = argmaxSpeed(series);
-  const peak = series[peakSeriesIdx];
-  if (peakSeriesIdx < 0 || !peak || peak.speed <= 0) {
-    return { ok: false, reason: "We couldn't find a swing in this video." };
-  }
-  const startThreshold = peak.speed * options.startFraction;
+  // The wrist track: frames where the hands were visible, positions
+  // median-filtered so one teleported frame cannot anchor anything.
+  const track: Array<{ tMs: number; index: number }> = [];
+  const rawX: number[] = [];
+  const rawY: number[] = [];
+  samples.forEach((s, index) => {
+    if (!s.metrics.wristPos) return;
+    track.push({ tMs: s.tMs, index });
+    rawX.push(s.metrics.wristPos.x);
+    rawY.push(s.metrics.wristPos.y);
+  });
+  if (track.length < options.minSamples) return fail(NO_HANDS);
 
-  const takeawaySeriesIdx = firstSustainedAbove(
-    series,
-    0,
-    startThreshold,
-    options.sustainMs,
+  const xs = medianFilter(rawX, options.medianWindow);
+  const ys = medianFilter(rawY, options.medianWindow);
+  const times = track.map((p) => p.tMs);
+  const speeds = movingAverage(
+    speedsFromTrack(times, xs, ys, options.maxGapMs),
+    options.smoothWindow,
   );
-  if (takeawaySeriesIdx < 0 || takeawaySeriesIdx >= peakSeriesIdx) {
-    return {
-      ok: false,
-      reason:
-        "We couldn't separate the takeaway from the strike. Start the clip with a second of stillness at address.",
-    };
-  }
 
-  const topSeriesIdx = argminSpeedBetween(
-    series,
-    takeawaySeriesIdx + 1,
-    peakSeriesIdx - 1,
-  );
-  const topSpeed = series[topSeriesIdx]?.speed;
-  const takeawayT = series[takeawaySeriesIdx]?.tMs ?? 0;
-  const topT = series[topSeriesIdx]?.tMs ?? 0;
-  const impactT2 = peak.tMs;
-  if (
-    topSeriesIdx <= takeawaySeriesIdx ||
-    topSpeed === undefined ||
-    topSpeed > peak.speed * options.topFraction ||
-    topT - takeawayT < options.minBackswingMs ||
-    impactT2 - topT < options.minDownswingMs
-  ) {
-    return {
-      ok: false,
-      reason:
-        "The backswing and downswing blur together in this clip. A steadier camera or better light usually fixes it.",
-    };
-  }
-
-  // Address: the stillest moment before the takeaway begins.
-  const addressSeriesIdx = argminSpeedBetween(series, 0, takeawaySeriesIdx - 1);
-
-  let followSeriesIdx = firstSustainedBelow(
-    series,
-    peakSeriesIdx + 1,
-    startThreshold,
-    options.sustainMs,
-  );
-  if (followSeriesIdx < 0) followSeriesIdx = series.length - 1;
-
-  const idxOf = (seriesIdx: number): number =>
-    series[Math.max(0, seriesIdx)]?.index ?? 0;
-
-  const phases: SwingPhases = {
-    addressIdx: idxOf(addressSeriesIdx < 0 ? 0 : addressSeriesIdx),
-    takeawayIdx: idxOf(takeawaySeriesIdx),
-    topIdx: idxOf(topSeriesIdx),
-    impactIdx: idxOf(peakSeriesIdx),
-    followIdx: idxOf(followSeriesIdx),
+  const firstAtOrAfter = (t: number) => times.findIndex((v) => v >= t);
+  const lastAtOrBefore = (t: number) => {
+    for (let i = times.length - 1; i >= 0; i--) {
+      const v = times[i];
+      if (v !== undefined && v <= t) return i;
+    }
+    return -1;
   };
+  const tOf = (i: number) => times[i] ?? 0;
 
-  const addressT = samples[phases.addressIdx]?.tMs ?? 0;
-  const impactT = samples[phases.impactIdx]?.tMs ?? 0;
-  if (impactT - addressT < options.minSwingMs) {
-    return {
-      ok: false,
-      reason:
-        "That looked too quick to be a full swing. Film a complete swing from address to finish.",
-    };
+  const peakI = argmaxIndexBetween(speeds, 0, speeds.length - 1);
+  const peakSpeed = speeds[peakI] ?? 0;
+  if (peakI < 0 || peakSpeed <= 0) return fail(NO_SWING);
+
+  // 1. Impact: hands lowest (max image y) near the speed peak; the club
+  // passes the ball with the hands at the bottom of their arc.
+  const impactI = argmaxIndexBetween(
+    ys,
+    Math.max(0, firstAtOrAfter(tOf(peakI) - options.impactRefineMs)),
+    lastAtOrBefore(tOf(peakI) + options.impactRefineMs),
+  );
+  if (impactI < 0) return fail(NO_SWING);
+
+  // 2. Top: hands highest (min image y) within the backswing window.
+  const topFrom = firstAtOrAfter(tOf(impactI) - options.maxBackswingMs);
+  const topI = argminIndexBetween(
+    ys,
+    Math.max(0, topFrom),
+    lastAtOrBefore(tOf(impactI) - options.minDownswingMs),
+  );
+  if (topI < 0) return fail(BLURRED);
+
+  // Torso length normalizes the position thresholds; a swing whose hands
+  // never rise a real fraction of it is not a full swing.
+  const torsoAt = (i: number): number | null => {
+    const m = samples[track[i]?.index ?? -1]?.metrics;
+    if (!m?.shoulderMid || !m.hipMid) return null;
+    return Math.hypot(
+      m.shoulderMid.x - m.hipMid.x,
+      m.shoulderMid.y - m.hipMid.y,
+    );
+  };
+  const torso = torsoAt(impactI) ?? torsoAt(topI);
+  if (
+    torso !== null &&
+    (ys[impactI] ?? 0) - (ys[topI] ?? 0) < options.minTopRiseFrac * torso
+  ) {
+    return fail(BLURRED);
   }
 
-  return { ok: true, phases };
+  // 3. Address: the end of the last sustained stillness before the backswing
+  // could have started; falls back to the least-motion moment.
+  const addressBound = lastAtOrBefore(tOf(topI) - options.minBackswingMs);
+  if (addressBound < 0) return fail(NO_TAKEAWAY);
+  let addressI = lastStillEndBefore(
+    speeds,
+    times,
+    addressBound,
+    peakSpeed * options.stillFraction,
+    options.stillMs,
+  );
+  if (addressI < 0) addressI = argminIndexBetween(speeds, 0, addressBound);
+  if (addressI < 0) return fail(NO_TAKEAWAY);
+
+  // 4. Takeaway: first sustained displacement of the wrists from where they
+  // sat at address; speed-threshold fallback when torso is unreadable.
+  const takeawayI =
+    torso !== null
+      ? firstSustainedAboveIdx(
+          xs.map((x, i) =>
+            Math.hypot(x - (xs[addressI] ?? 0), (ys[i] ?? 0) - (ys[addressI] ?? 0)),
+          ),
+          times,
+          addressI + 1,
+          options.takeawayFrac * torso,
+          options.sustainMs,
+        )
+      : firstSustainedAboveIdx(
+          speeds,
+          times,
+          addressI + 1,
+          peakSpeed * options.settleFraction,
+          options.sustainMs,
+        );
+  if (takeawayI < 0 || takeawayI > topI) return fail(NO_TAKEAWAY);
+  if (tOf(topI) - tOf(takeawayI) < options.minBackswingMs) return fail(BLURRED);
+
+  // 5. Follow-through: motion settling after impact, else the last frame.
+  let followI = firstSustainedBelowIdx(
+    speeds,
+    times,
+    impactI + 1,
+    peakSpeed * options.settleFraction,
+    options.sustainMs,
+  );
+  if (followI < 0) followI = speeds.length - 1;
+
+  if (tOf(impactI) - tOf(addressI) < options.minSwingMs) return fail(TOO_QUICK);
+
+  const sampleIdx = (i: number) => track[i]?.index ?? 0;
+  return {
+    ok: true,
+    phases: {
+      addressIdx: sampleIdx(addressI),
+      takeawayIdx: sampleIdx(takeawayI),
+      topIdx: sampleIdx(topI),
+      impactIdx: sampleIdx(impactI),
+      followIdx: sampleIdx(Math.max(followI, impactI)),
+    },
+  };
 }
 
 // --- Report --------------------------------------------------------------------

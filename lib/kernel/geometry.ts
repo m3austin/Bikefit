@@ -64,6 +64,24 @@ export function movingAverage(
   return out;
 }
 
+/** Centered moving median, window clamped like movingAverage. Unlike a mean,
+ * a median REMOVES a single-frame outlier (a tracker teleport) instead of
+ * spreading it into its neighbours. */
+export function medianFilter(
+  values: readonly number[],
+  window: number,
+): number[] {
+  if (values.length === 0) return [];
+  const half = Math.floor(Math.max(1, Math.min(window, values.length)) / 2);
+  return values.map((v, i) => {
+    const win = values
+      .slice(Math.max(0, i - half), Math.min(values.length, i + half + 1))
+      .slice()
+      .sort((a, b) => a - b);
+    return win[Math.floor(win.length / 2)] ?? v;
+  });
+}
+
 export type MetricStats = {
   min: number;
   max: number;

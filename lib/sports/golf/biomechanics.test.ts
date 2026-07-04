@@ -151,6 +151,53 @@ describe("computeGolfFrameMetrics", () => {
   });
 });
 
+/**
+ * A piecewise-linear wrist path over a fixed body: enough to test phase
+ * detection against realistic footage shapes (practice swings, glitches)
+ * without the full metric knobs of syntheticSwing. Keyframes are
+ * {tMs, x, y}; the wrist lerps between them at 30 fps.
+ */
+function wristPathFrames(
+  keys: ReadonlyArray<{ tMs: number; x: number; y: number }>,
+): TimedFrame[] {
+  const frames: TimedFrame[] = [];
+  const last = keys[keys.length - 1];
+  if (!last) throw new Error("fixture");
+  for (let t = 0; t <= last.tMs; t += 1000 / 30) {
+    let wrist = { x: keys[0]?.x ?? 0, y: keys[0]?.y ?? 0 };
+    for (let k = 0; k + 1 < keys.length; k++) {
+      const a = keys[k];
+      const b = keys[k + 1];
+      if (!a || !b) break;
+      if (t >= a.tMs && t <= b.tMs) {
+        const u = b.tMs > a.tMs ? (t - a.tMs) / (b.tMs - a.tMs) : 0;
+        wrist = { x: lerp(a.x, b.x, u), y: lerp(a.y, b.y, u) };
+        break;
+      }
+      if (t > b.tMs) wrist = { x: b.x, y: b.y };
+    }
+    frames.push({
+      tMs: t,
+      frame: frameWithPoints({
+        [LANDMARK.LEFT_SHOULDER]: { x: 0.44, y: 0.42 },
+        [LANDMARK.RIGHT_SHOULDER]: { x: 0.56, y: 0.42 },
+        [LANDMARK.LEFT_HIP]: { x: 0.45, y: 0.6 },
+        [LANDMARK.RIGHT_HIP]: { x: 0.55, y: 0.6 },
+        [LANDMARK.LEFT_WRIST]: wrist,
+        [LANDMARK.RIGHT_WRIST]: wrist,
+      }),
+    });
+  }
+  return frames;
+}
+
+function toSamples(frames: readonly TimedFrame[]): GolfTimedMetrics[] {
+  return frames.map((f) => ({
+    tMs: f.tMs,
+    metrics: computeGolfFrameMetrics(f.frame, 1),
+  }));
+}
+
 describe("detectSwingPhases", () => {
   it("orders the five phases and places them in the right windows", () => {
     const frames = syntheticSwing();
@@ -178,6 +225,61 @@ describe("detectSwingPhases", () => {
     expect(phases.takeawayIdx).toBeLessThan(phases.topIdx);
     expect(phases.topIdx).toBeLessThan(phases.impactIdx);
     expect(phases.impactIdx).toBeLessThanOrEqual(phases.followIdx);
+  });
+
+  it("ignores a practice swing before the real one", () => {
+    // A brisk practice swing (400-1400), a still re-address (1400-2400),
+    // then the real swing: backswing to 3150, top hold, impact at ~3550.
+    const frames = wristPathFrames([
+      { tMs: 0, x: 0.62, y: 0.72 },
+      { tMs: 400, x: 0.62, y: 0.72 },
+      { tMs: 800, x: 0.5, y: 0.4 }, // practice up (hands never as high as a real top)
+      { tMs: 1400, x: 0.62, y: 0.72 }, // practice down
+      { tMs: 2400, x: 0.62, y: 0.72 }, // still at address again
+      { tMs: 3150, x: 0.4, y: 0.3 }, // real backswing
+      { tMs: 3300, x: 0.4, y: 0.3 }, // top hold
+      { tMs: 3550, x: 0.63, y: 0.74 }, // downswing to impact
+      { tMs: 3950, x: 0.45, y: 0.3 }, // follow-through
+      { tMs: 4400, x: 0.45, y: 0.3 },
+    ]);
+    const detection = detectSwingPhases(toSamples(frames));
+    expect(detection.ok).toBe(true);
+    if (!detection.ok) return;
+    const samples = toSamples(frames);
+    const t = (i: number) => samples[i]?.tMs ?? NaN;
+    // Every phase belongs to the REAL swing, not the practice one.
+    expect(t(detection.phases.addressIdx)).toBeGreaterThan(1500);
+    expect(t(detection.phases.addressIdx)).toBeLessThan(2600);
+    expect(t(detection.phases.takeawayIdx)).toBeGreaterThan(2300);
+    expect(t(detection.phases.takeawayIdx)).toBeLessThan(2800);
+    expect(t(detection.phases.topIdx)).toBeGreaterThan(3000);
+    expect(t(detection.phases.topIdx)).toBeLessThan(3400);
+    expect(t(detection.phases.impactIdx)).toBeGreaterThan(3400);
+    expect(t(detection.phases.impactIdx)).toBeLessThan(3700);
+  });
+
+  it("is not fooled by a single-frame tracker glitch", () => {
+    // The classic MediaPipe failure: one frame where the wrists teleport
+    // (occlusion re-acquisition). It must not become "impact".
+    const frames = syntheticSwing();
+    const glitchIdx = frames.findIndex((f) => f.tMs > 2300);
+    const glitch = frames[glitchIdx];
+    if (!glitch) throw new Error("fixture");
+    frames[glitchIdx] = {
+      tMs: glitch.tMs,
+      frame: glitch.frame.map((lm, i) =>
+        i === LANDMARK.LEFT_WRIST || i === LANDMARK.RIGHT_WRIST
+          ? { ...lm, x: 0.95, y: 0.95 }
+          : lm,
+      ),
+    };
+    const samples = toSamples(frames);
+    const detection = detectSwingPhases(samples);
+    expect(detection.ok).toBe(true);
+    if (!detection.ok) return;
+    const t = (i: number) => samples[i]?.tMs ?? NaN;
+    expect(t(detection.phases.impactIdx)).toBeGreaterThan(1550);
+    expect(t(detection.phases.impactIdx)).toBeLessThan(1900);
   });
 
   it("fails plainly when there is no swing", () => {
