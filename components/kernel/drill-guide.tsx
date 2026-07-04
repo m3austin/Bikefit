@@ -1,6 +1,7 @@
 import { Clock, Lightbulb, Store, Wrench } from "lucide-react";
 
 import { GlossaryTerm } from "@/components/fit/glossary-term";
+import { FormCue, type FormFigure } from "@/components/kernel/form-cue";
 import type { DrillDifficulty, SportDrill } from "@/lib/sports/types";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,13 @@ const DIFFICULTY_META: Record<
   moderate: { label: "Moderate", className: "bg-surface-2 text-ink-muted" },
 };
 
-function DrillSection({ drill }: { drill: SportDrill }) {
+function DrillSection({
+  drill,
+  figure,
+}: {
+  drill: SportDrill;
+  figure?: FormFigure;
+}) {
   const difficulty = DIFFICULTY_META[drill.difficulty];
   return (
     <section
@@ -46,17 +53,29 @@ function DrillSection({ drill }: { drill: SportDrill }) {
             {drill.time}
           </span>
         </div>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          {drill.why}
-        </p>
-        {drill.glossaryIds.length > 0 ? (
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-muted print:hidden">
-            <span>Jargon here, tap for plain English:</span>
-            {drill.glossaryIds.map((id) => (
-              <GlossaryTerm key={id} id={id} />
-            ))}
-          </p>
-        ) : null}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+          <div className="flex flex-1 flex-col gap-3">
+            <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+              {drill.why}
+            </p>
+            {drill.glossaryIds.length > 0 ? (
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-muted print:hidden">
+                <span>Jargon here, tap for plain English:</span>
+                {drill.glossaryIds.map((id) => (
+                  <GlossaryTerm key={id} id={id} />
+                ))}
+              </p>
+            ) : null}
+          </div>
+          {figure ? (
+            <div className="shrink-0 sm:w-40">
+              <p className="mb-1 text-center text-xs font-medium uppercase tracking-wide text-accent">
+                What good looks like
+              </p>
+              <FormCue figure={figure} size={150} className="w-full" />
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-4">
@@ -125,6 +144,9 @@ export type DrillGuideProps = {
   drills: readonly SportDrill[];
   /** The guidance-not-a-lesson closing line, in the sport's own words. */
   footer: string;
+  /** Optional "what good looks like" figures, keyed by drill id. Drills
+   * without one (rhythm and timing cues) simply render without a figure. */
+  figures?: Partial<Record<string, FormFigure>>;
 };
 
 export function DrillGuide({
@@ -133,6 +155,7 @@ export function DrillGuide({
   intro,
   drills,
   footer,
+  figures,
 }: DrillGuideProps) {
   return (
     <div className="flex flex-col gap-8">
@@ -161,7 +184,7 @@ export function DrillGuide({
       </nav>
 
       {drills.map((drill) => (
-        <DrillSection key={drill.id} drill={drill} />
+        <DrillSection key={drill.id} drill={drill} figure={figures?.[drill.id]} />
       ))}
 
       <p className="max-w-prose border-t border-line pt-6 text-sm leading-relaxed text-ink-muted">
