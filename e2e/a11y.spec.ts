@@ -20,7 +20,9 @@ async function audit(page: import("@playwright/test").Page) {
 
 const staticRoutes = [
   ["/", "landing"],
+  ["/fit", "mode choice"],
   ["/fit/new", "wizard"],
+  ["/fit/video", "video upload"],
   ["/fits", "garage (empty)"],
   ["/settings", "settings"],
   ["/method", "method"],

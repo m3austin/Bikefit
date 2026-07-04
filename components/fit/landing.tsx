@@ -71,7 +71,7 @@ function Hero() {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild size="lg">
-          <Link href="/fit/new">
+          <Link href="/fit">
             Start your fit
             <ArrowRight />
           </Link>
@@ -121,7 +121,7 @@ function WelcomeBack({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild>
-          <Link href="/fit/new">
+          <Link href="/fit">
             New fit
             <ArrowRight />
           </Link>

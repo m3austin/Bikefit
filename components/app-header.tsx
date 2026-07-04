@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
   { href: "/", label: "Home" },
-  { href: "/fit/new", label: "New fit" },
+  { href: "/fit", label: "New fit" },
   { href: "/fits", label: "Saved fits" },
   { href: "/method", label: "Method" },
   { href: "/settings", label: "Settings" },

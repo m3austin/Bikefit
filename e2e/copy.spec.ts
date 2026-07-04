@@ -29,7 +29,15 @@ function assertClean(text: string, where: string) {
   expect(text, `em dash found in ${where}`).not.toContain("—");
 }
 
-const routes = ["/", "/method", "/fits", "/settings", "/fit/new"];
+const routes = [
+  "/",
+  "/method",
+  "/fits",
+  "/settings",
+  "/fit",
+  "/fit/new",
+  "/fit/video",
+];
 
 for (const route of routes) {
   test(`no banned words: ${route}`, async ({ page }) => {

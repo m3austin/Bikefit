@@ -44,3 +44,16 @@ export function formatMeasurementText(mm: number, unit: Unit): string {
 export function formatRangeText(low: number, high: number, unit: Unit): string {
   return `${formatValue(low, unit)} to ${formatValue(high, unit)} ${unitLabel(unit)}`;
 }
+
+/**
+ * A joint angle, e.g. "142.3°". Angles have no cm/in mode; one decimal keeps
+ * screen and any future print output identical (single-source display rule).
+ */
+export function formatDeg(degrees: number): string {
+  return `${degrees.toFixed(1)}°`;
+}
+
+/** A dimensionless percentage, e.g. "12.5%" (frontal metrics, % of hip width). */
+export function formatPct(percent: number): string {
+  return `${percent.toFixed(1)}%`;
+}

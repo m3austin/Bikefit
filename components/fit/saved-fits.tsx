@@ -128,7 +128,7 @@ export function SavedFits() {
         body="When you calculate a fit and save it, it lands here so you can open, rename, or re-run it later."
       >
         <Button asChild>
-          <Link href="/fit/new">Start your first fit</Link>
+          <Link href="/fit">Start your first fit</Link>
         </Button>
       </StateBlock>
     );
@@ -139,7 +139,7 @@ export function SavedFits() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-ink">Saved fits</h1>
         <Button asChild variant="outline">
-          <Link href="/fit/new">New fit</Link>
+          <Link href="/fit">New fit</Link>
         </Button>
       </div>
 

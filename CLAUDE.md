@@ -21,6 +21,17 @@ BikeFit is a free, local-first web app giving everyday cyclists a professional-q
 - **Copy rules (PRD §12):** calculator, not oracle; never claim to replace a professional fit; banned words: prescription, diagnosis, guaranteed, perfect, professional-grade. No em dashes in product copy. No exclamation marks in instructional copy. Disclaimer stays on results and print.
 - **Accessibility floor:** keyboard-complete, labelled inputs, visible focus, `prefers-reduced-motion` respected, contrast per UX-UI-Design §2, touch targets ≥ 44px.
 
+## Video fit analysis (architecture rules)
+
+BikeFit has two fit flows: **Quick Fit** (the original height-based wizard at `/fit/new`, unchanged) and **Video Fit Analysis** (`/fit/video`), which measures joint angles from a pedaling video. `/fit` is the chooser between them.
+
+Video Fit Analysis takes up to two camera views: the **side view is required** (sagittal-plane angles: knee, hip, elbow, torso) and a **front or rear view is optional** (frontal plane: knee tracking, left-right symmetry, hip drop). The two views cannot be told apart automatically, so each has its own labeled upload slot. Never run facing-side detection (`detectFacingSide`) on the front view: it infers the side from one side being occluded, which is false head-on. Each on-screen video owns its own PoseLandmarker instance (VIDEO mode is stateful; two streams must never share one).
+
+- **100% client-side video processing.** The rider's video file is never uploaded to any server, ever: no `fetch`/`XHR` of the video, no server route that touches it. Pose detection runs in-browser via `@mediapipe/tasks-vision` (`PoseLandmarker`, lite model, `VIDEO` running mode). The model weights and WASM runtime are fetched from Google's public CDN on first use of this feature (a one-time, cacheable download of ML model assets, not user data), which is a different thing from uploading the rider's video and is fine.
+- **All geometry math lives in `lib/biomechanics.ts`**, as pure functions with unit tests (synthetic landmark fixtures, no browser/DOM/MediaPipe runtime needed to test). Landmark index constants and the skeleton connection topology live in `lib/pose-model.ts` (data, not math) and are imported by both `lib/biomechanics.ts` and the drawing code.
+- **All fit thresholds and recommendation rules live in `lib/fit-rules.ts`.** Every threshold value carries a `// PLACEHOLDER:` comment. Never invent, silently tune, or replace a placeholder value; only the user replaces these, with a sourced value.
+- **No em dashes anywhere**, including code comments, not just UI copy.
+
 ## Engineering standards
 
 - TypeScript `strict: true`. No `any`, `as any`, `@ts-ignore`, or empty `catch {}`.
