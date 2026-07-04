@@ -149,6 +149,7 @@ export function LiftResultsSection({
       primary={primary}
       secondary={secondary}
       drillsBase="/lifting/drills"
+      rabbitHoleHref="/method#lifting"
       allClearNote="No change to make from these numbers. Keep the weight honest and the reps clean."
       keyFrames={keyFrames}
       videoUrl={videoUrl}

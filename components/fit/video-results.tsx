@@ -132,6 +132,7 @@ export function VideoResultsSection({
       primary={primary}
       secondary={secondary}
       drillsBase="/cycling/drills"
+      rabbitHoleHref="/method#cycling"
       keyFrames={keyFrames}
       videoUrl={sideUrl}
       aspect={aspect}

@@ -1,194 +1,278 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BadgeCheck, FlaskConical } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DISCLAIMER } from "@/lib/results-copy";
+import { Cite } from "@/components/kernel/cite";
+import { ReferenceList } from "@/components/kernel/reference-list";
 
 export const metadata: Metadata = {
-  title: "How it works",
+  title: "The rabbit hole",
   description:
-    "The fitting methods BikeFit uses, where they come from, what they are good at, and where they break down.",
+    "Where every SportFits number comes from: the methods, what they are good at, where they break down, and the sources behind them. Every value is either cited or labeled as our own starting estimate.",
 };
 
-function Method({
+/*
+ * The rabbit hole (/method): the one place depth is allowed to live. The rest
+ * of the app stays short and links here. Every method names its source
+ * (lib/references.ts) or is labeled plainly as our own estimate. This page is
+ * the answer to "it is free, so it is probably not accurate": here is exactly
+ * what each number stands on.
+ */
+
+function Sourced() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-ink">
+      <BadgeCheck className="size-3 text-accent" aria-hidden="true" />
+      Sourced
+    </span>
+  );
+}
+
+function Estimate() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-warn/15 px-2 py-0.5 text-[11px] font-medium text-ink">
+      <FlaskConical className="size-3 text-warn" aria-hidden="true" />
+      Our estimate
+    </span>
+  );
+}
+
+function Entry({
+  id,
   title,
-  formula,
+  badge,
   children,
 }: {
+  id?: string;
   title: string;
-  formula?: string;
+  badge: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 border-t border-line pt-8">
-      <h2 className="text-xl font-semibold text-ink">{title}</h2>
-      {formula ? (
-        <p className="measurement rounded-sm bg-surface-2 px-3 py-2 text-sm text-ink">
-          {formula}
-        </p>
-      ) : null}
-      <div className="flex max-w-prose flex-col gap-3 text-ink-muted">
+    <div id={id} className="flex scroll-mt-20 flex-col gap-2 rounded-lg border border-line bg-surface p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-base font-semibold text-ink">{title}</h3>
+        {badge}
+      </div>
+      <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-ink-muted">
         {children}
       </div>
+    </div>
+  );
+}
+
+function Sport({
+  id,
+  brand,
+  blurb,
+  children,
+}: {
+  id: string;
+  brand: string;
+  blurb: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      aria-label={brand}
+      className="flex scroll-mt-20 flex-col gap-4 border-t border-line pt-8"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-semibold text-ink">{brand}</h2>
+        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+          {blurb}
+        </p>
+      </div>
+      <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
 }
 
-export default function MethodPage() {
+export default function RabbitHolePage() {
   return (
     <article className="flex flex-col gap-8">
       <header className="flex flex-col gap-3">
         <p className="measurement text-sm font-medium uppercase tracking-wide text-accent">
-          Methodology
+          Down the rabbit hole
         </p>
         <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-          How BikeFit works
+          Where every number comes from
         </h1>
         <p className="max-w-prose text-lg leading-relaxed text-ink-muted">
-          Every number here comes from a published fitting method. None of them
-          are secret, and none of them are the last word. This page walks
-          through each one: where it comes from, what it is good at, and where
-          it breaks down, so you can trust the parts that deserve trust and take
-          the rest as a starting point.
+          SportFits is free, so it is fair to ask whether the numbers mean
+          anything. This is the honest answer. Every target is either drawn
+          from published work, and cited right here, or it is our own sensible
+          starting estimate, and labeled as one. Nothing in between, and
+          nothing dressed up. Stay as long as you like.
         </p>
       </header>
 
-      <Method
-        title="Saddle height"
-        formula="Recommended start = mean of (0.883 times inseam) and (1.09 times inseam minus crank length)"
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5">
+        <p className="text-sm font-medium text-ink">How to read this page</p>
+        <div className="flex flex-col gap-2 text-sm leading-relaxed text-ink-muted">
+          <p className="flex items-center gap-2">
+            <Sourced /> the target comes from the cited source.
+          </p>
+          <p className="flex items-center gap-2">
+            <Estimate /> a reasonable starting value we chose, not yet confirmed
+            by a sport expert. It will be replaced as experts weigh in.
+          </p>
+          <p>
+            Either way, every output is a range with a recommended start, never
+            a single oracle number. Comfort and how the movement feels always
+            win over the maths.
+          </p>
+        </div>
+      </div>
+
+      <section className="flex scroll-mt-20 flex-col gap-2 border-t border-line pt-8">
+        <h2 className="text-xl font-semibold text-ink">The technique score</h2>
+        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+          Each category scores 0 to 10 by how close your measured value sits to
+          its range: right in the range is 10, and the score eases down the
+          further outside you land. The overall score is the plain average of
+          your categories. It is a readout of fit to sensible ranges, not an
+          expert grade, and it is only ever as good as the ranges below.
+        </p>
+      </section>
+
+      <Sport
+        id="cycling"
+        brand="BikeFit (cycling)"
+        blurb="Cycling is the most studied of the sports here, so most of its numbers are sourced rather than estimated."
       >
-        <p>
-          Two classic methods sit behind this number. The first, popularised by
-          Greg LeMond, sets saddle height at 0.883 of your inseam measured from
-          the bottom bracket to the top of the saddle. The second, from research
-          by Hamley, works from the pedal and gives 1.09 of your inseam once you
-          subtract the crank length. We take the average of the two and round to
-          the nearest millimetre, then nudge it slightly for your bike type and
-          riding priority.
-        </p>
-        <p>
-          What it is good at: giving a repeatable, sane starting height that
-          keeps your knee from over-extending. It is the most reliable single
-          number in bike fitting.
-        </p>
-        <p>
-          Where it breaks: inseam is hard to measure to the millimetre, and shoe
-          sole thickness, pedal stack, and cleat position all shift the real
-          height. Treat the range as the answer, not the exact figure, and use
-          the heel-on-pedal check: with your heel on the pedal at the bottom of
-          the stroke, your leg should be straight and your hips level.
-        </p>
-      </Method>
+        <Entry id="saddle-height" title="Saddle height" badge={<Sourced />}>
+          <p>
+            We average two classic methods and round to the millimetre: 0.883
+            times inseam <Cite id="lemond-1987" />, and 1.09 times inseam minus
+            crank length <Cite id="hamley-thomas-1967" />. It is the most
+            reliable single number in bike fitting.
+          </p>
+          <p>
+            Where it breaks: inseam is hard to measure exactly, and shoe sole,
+            pedal stack, and cleat position all shift the real height. Use the
+            heel-on-pedal check and treat the range as the answer.
+          </p>
+        </Entry>
+        <Entry title="Knee angle at the stroke bottom" badge={<Sourced />}>
+          <p>
+            The video analysis checks your knee against the 25 to 35 degree
+            flexion window at the bottom of the stroke{" "}
+            <Cite id="holmes-1994" />, the range tied to lower knee-overuse risk.
+          </p>
+        </Entry>
+        <Entry title="Saddle setback" badge={<Sourced />}>
+          <p>
+            We start from knee-over-pedal-spindle <Cite id="kops-convention" />,
+            a fitting convention rather than a law. Move the saddle back if the
+            front of your knee aches, forward if the back does.
+          </p>
+        </Entry>
+        <Entry title="Reach, drop, width, cranks, frame size" badge={<Estimate />}>
+          <p>
+            These come from long-standing fitting rules of thumb (elbow bend for
+            reach, flexibility for drop, shoulder width for bars, inseam for
+            cranks and frame size). They are sound starting points, not sourced
+            targets, so we treat them as estimates and lead with the feel.
+          </p>
+        </Entry>
+      </Sport>
 
-      <Method
-        title="Saddle setback"
-        formula="Estimated setback from the bottom bracket = 0.245 times inseam minus 100 mm"
+      <Sport
+        id="running"
+        brand="RunFit (running)"
+        blurb="Cadence is sourced; the rest of the gait numbers are starting estimates until a running coach or physiotherapist confirms them."
       >
-        <p>
-          Setback is how far the saddle sits behind the bottom bracket. The old
-          rule of thumb is knee over pedal spindle: with the cranks level, a
-          plumb line from the front of your kneecap falls near the pedal axle.
-          The formula gives a rough starting band, but the behaviour matters
-          more than the millimetres.
-        </p>
-        <p>
-          Where it breaks: knee over pedal is a convention, not a law of
-          physics. Riders comfortable a centimetre either side of it are
-          completely normal. Move the saddle back if the front of your knee
-          aches, forward if the back of your knee does.
-        </p>
-      </Method>
+        <Entry id="cadence" title="Cadence" badge={<Sourced />}>
+          <p>
+            Nudging your cadence up about 5 to 10 percent measurably lowers the
+            load at your hip and knee <Cite id="heiderscheit-2011" />, which is
+            why cadence is the hero metric and the first change we suggest.
+          </p>
+        </Entry>
+        <Entry
+          title="Overstride, knee at contact, bounce, trunk lean, pelvic drop"
+          badge={<Estimate />}
+        >
+          <p>
+            These read real, useful things from your video, but the exact target
+            ranges are our starting estimates, and several are 2D proxies from a
+            single camera. Treat them as honest hints ranked by usefulness, and
+            let how running feels over a couple of weeks be the judge.
+          </p>
+        </Entry>
+      </Sport>
 
-      <Method
-        title="Reach"
-        formula="Estimated reach = (torso plus arm) divided by two, plus 40 mm"
+      <Sport
+        id="lifting"
+        brand="LiftFit (lifting)"
+        blurb="The safety framing is grounded in the biomechanics literature; the specific target numbers are starting estimates."
       >
-        <p>
-          Reach is the horizontal distance from saddle to handlebar, set mostly
-          by frame and stem. This is the least formula-friendly number on the
-          sheet, so we lead with the feel: on the hoods or grips, your elbows
-          should keep a slight bend, around 15 to 20 degrees, and your arms
-          should never lock straight.
-        </p>
-        <p>
-          Where it breaks: torso and arm proportions vary a lot for the same
-          height, and flexibility changes what feels good. Use the number to
-          pick a stem length in the right neighbourhood, then trust your body.
-        </p>
-      </Method>
+        <Entry id="back-rounding" title="Deadlift back rounding" badge={<Sourced />}>
+          <p>
+            Spinal flexion under load is the highest-stakes fault in the app,
+            and why the deadlift back-rounding reading is the one we treat most
+            seriously <Cite id="mcgill-lbd" />. It is a 2D proxy that errs toward
+            caution on purpose. If your back rounds even at light weight, stop
+            and see a coach or physiotherapist.
+          </p>
+        </Entry>
+        <Entry
+          title="Depth, balance, wrist stack, bar path, lockout"
+          badge={<Estimate />}
+        >
+          <p>
+            The per-lift target ranges are our starting estimates from common
+            coaching cues, not sourced values. A lift is a config entry, so
+            these will sharpen per lift as a strength coach confirms them.
+          </p>
+        </Entry>
+      </Sport>
 
-      <Method title="Handlebar drop">
-        <p>
-          Drop is how far the bars sit below the saddle, and it only applies to
-          drop-bar bikes. We set the band from your flexibility (the toe-touch
-          test), then place the start point within it based on your priority:
-          more comfort means less drop, more performance means more.
-        </p>
-        <p>
-          Where it breaks: flexibility changes over a season and with warm-up.
-          Raise the bars if your hands go numb or your neck aches, and revisit
-          the fit as you get more supple.
-        </p>
-      </Method>
-
-      <Method title="Handlebar width">
-        <p>
-          For drop bars, width is your shoulder measurement rounded to the
-          nearest 20 mm, since bars are sold in 2 cm steps. Wider bars open the
-          chest and steady the steering, narrower ones feel quicker. Mountain
-          and hybrid bars are a different story: they run wide, around 740 to 780
-          mm, and you trim them to taste. Cutting is permanent, so go slowly.
-        </p>
-      </Method>
-
-      <Method title="Crank length">
-        <p>
-          We pick crank length from your inseam: under 750 mm suggests 165,
-          750 to 809 suggests 170, 810 to 859 suggests 172.5, and 860 and up
-          suggests 175. The industry has been trending shorter for good reasons,
-          so going one step below the chart is never a wrong choice for comfort.
-          Shorter cranks open your hip angle and can let you drop the saddle
-          slightly.
-        </p>
-      </Method>
-
-      <Method title="Cleat position">
-        <p>
-          If you gave a foot length, we include cleat guidance. Start with the
-          pedal axle under the ball of your foot, the wide part just behind the
-          big-toe joint. There is no single right number here, so this is
-          behaviour, not a formula. Moving the cleat a little toward the midfoot
-          takes load off the calf and can feel better on long rides.
-        </p>
-      </Method>
-
-      <Method
-        title="Frame size"
-        formula="Road and gravel: 0.665 times inseam (cm). Mountain: 0.225 times inseam (inches)."
+      <Sport
+        id="golf"
+        brand="GolfFit (golf)"
+        blurb="Every golf target is currently a starting estimate, and the turn numbers are 2D proxies. We are upfront about that."
       >
-        <p>
-          This one is for shopping, not for a bike you already own. It gives a
-          rough seat-tube size for road and gravel, and a rough frame size in
-          inches for mountain bikes. Modern geometry varies a lot, so treat it
-          as a place to start on a size chart and always compare stack and
-          reach. Between two sizes, the smaller frame is usually easier to make
-          comfortable.
-        </p>
-      </Method>
+        <Entry title="Tempo, spine, head, turn, slide, lead arm" badge={<Estimate />}>
+          <p>
+            These are reasonable ranges we chose to get you started, not sourced
+            targets, and the shoulder and hip turn figures read apparent width
+            on camera rather than true rotation. A launch monitor or an
+            in-person coach sees plenty this cannot. We will cite real values
+            here as a golf professional confirms them.
+          </p>
+        </Entry>
+      </Sport>
 
-      <Method title="Ranges, not oracle numbers">
-        <p>
-          You will notice every output is a range with a recommended start. That
-          is deliberate. False precision is the fastest way to lose your trust,
-          and no formula knows your body. Comfort always wins over the maths: if
-          a setting hurts, change it, and let the number lose the argument.
-        </p>
-      </Method>
+      <Sport
+        id="swimming"
+        brand="SwimFit (swimming), beta"
+        blurb="Swimming is the hardest capture in the app and ships as a beta. Its numbers are the roughest here, on purpose."
+      >
+        <Entry title="Stroke rate, head, elbow, body roll" badge={<Estimate />}>
+          <p>
+            One above-water camera sees one side of a movement that lives half
+            underwater. These targets are starting estimates and the readings
+            are weak proxies, body roll most of all. Read the confidence note in
+            your results first; on a swim clip it decides how much the rest is
+            worth.
+          </p>
+        </Entry>
+      </Sport>
+
+      <ReferenceList />
 
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm leading-relaxed text-ink-muted">{DISCLAIMER}</p>
+        <p className="text-sm leading-relaxed text-ink-muted">
+          None of this is medical advice or a substitute for an in-person coach
+          or clinician. It is a measuring tool with sources. If a movement
+          hurts, stop and get real help.
+        </p>
         <Button asChild className="self-start">
-          <Link href="/cycling">Start your fit</Link>
+          <Link href="/">Back to your sports</Link>
         </Button>
       </section>
     </article>

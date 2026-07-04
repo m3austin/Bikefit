@@ -103,12 +103,13 @@ export default function HomePage() {
           ))}
         </div>
         <p className="text-sm text-ink-muted">
-          Want the formulas and where they come from?{" "}
+          Wondering if a free tool can be trusted? Every number is either cited
+          or labeled as our estimate.{" "}
           <Link
             href="/method"
             className="text-accent underline underline-offset-2"
           >
-            Read the method
+            Head down the rabbit hole
           </Link>
           .
         </p>

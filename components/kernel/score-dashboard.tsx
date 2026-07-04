@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 import { FitRecommendations } from "@/components/fit/fit-recommendations";
 import { KeyFrameFilmstrip } from "@/components/kernel/key-frame-filmstrip";
@@ -46,6 +47,9 @@ export type ScoreDashboardProps = {
   keyFrames?: KeyFrameSpec[];
   videoUrl?: string;
   aspect?: number;
+  /** Deep link into the rabbit hole for this sport's sources, e.g.
+   * "/method#cycling". Shown as the "where these ranges come from" link. */
+  rabbitHoleHref?: string;
   /** Banners rendered above the score (confidence, data-quality warnings). */
   banners?: React.ReactNode;
   /** Sport-specific extras and the disclaimer, rendered at the end. */
@@ -107,6 +111,7 @@ export function ScoreDashboard({
   keyFrames,
   videoUrl,
   aspect,
+  rabbitHoleHref = "/method",
   banners,
   children,
 }: ScoreDashboardProps) {
@@ -145,6 +150,13 @@ export function ScoreDashboard({
               grade, and 10 means dialed in. The ranges are sensible starting
               points, not the last word.
             </p>
+            <Link
+              href={rabbitHoleHref}
+              className="inline-flex items-center gap-1 self-center text-sm text-accent underline-offset-2 hover:underline sm:self-start"
+            >
+              Where these ranges come from
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       ) : null}

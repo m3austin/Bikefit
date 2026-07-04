@@ -7,7 +7,7 @@ const NAV = [
   { href: "/cycling", label: "BikeFit" },
   { href: "/fits", label: "Saved fits" },
   { href: "/cycling/drills", label: "Drills" },
-  { href: "/method", label: "Method" },
+  { href: "/method", label: "Rabbit hole" },
   { href: "/settings", label: "Settings" },
 ] as const;
 
