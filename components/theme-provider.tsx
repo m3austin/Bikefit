@@ -35,8 +35,14 @@ function subscribeStored(onChange: () => void) {
 }
 
 function getStoredTheme(): Theme {
-  const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  return isTheme(stored) ? stored : DEFAULT_THEME;
+  // Reading localStorage can itself throw (browsers with site data fully
+  // blocked), not just writing. The app must render regardless.
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return isTheme(stored) ? stored : DEFAULT_THEME;
+  } catch {
+    return DEFAULT_THEME;
+  }
 }
 
 function getServerTheme(): Theme {

@@ -114,6 +114,10 @@ export function VideoWorkspace({
   const [analysis, setAnalysis] = React.useState<AnalysisState>({
     status: "idle",
   });
+  // The browser cannot decode this file (commonly an iPhone HEVC recording
+  // opened in a browser without an HEVC decoder). Resets with a new video,
+  // since a new videoUrl remounts the workspace via its key.
+  const [videoUnplayable, setVideoUnplayable] = React.useState(false);
 
   const accentColor = useThemeColor("--accent", "#3ddc97");
   React.useEffect(() => {
@@ -442,6 +446,7 @@ export function VideoWorkspace({
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onEnded={finalizeAnalysis}
+          onError={() => setVideoUnplayable(true)}
         />
         <canvas
           ref={canvasRef}
@@ -449,6 +454,30 @@ export function VideoWorkspace({
           className="pointer-events-none absolute inset-0 h-full w-full"
         />
       </div>
+
+      {videoUnplayable ? (
+        <div
+          role="note"
+          aria-label="Video cannot be played"
+          className="flex gap-3 rounded-md border border-warn/40 bg-warn/10 p-4 text-ink"
+        >
+          <TriangleAlert
+            className="mt-0.5 shrink-0 text-warn"
+            aria-hidden="true"
+          />
+          <div className="space-y-1 text-sm">
+            <p className="font-medium">
+              This browser cannot play that video
+            </p>
+            <p className="text-ink-muted">
+              iPhones often record in HEVC (High Efficiency), which some
+              browsers cannot decode. Two easy fixes: run the analysis in
+              Safari on the phone that recorded it, or set the camera to Most
+              Compatible (Settings, then Camera, then Formats) and re-record.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-4 text-sm text-ink-muted">
         {landmarkerState === "loading" ? (

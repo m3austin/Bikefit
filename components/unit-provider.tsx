@@ -27,8 +27,14 @@ function subscribe(onChange: () => void) {
 }
 
 function getStoredUnit(): Unit {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  return isUnit(stored) ? stored : DEFAULT_UNIT;
+  // Reading localStorage can itself throw (browsers with site data fully
+  // blocked), not just writing. The app must render regardless.
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return isUnit(stored) ? stored : DEFAULT_UNIT;
+  } catch {
+    return DEFAULT_UNIT;
+  }
 }
 
 function getServerUnit(): Unit {

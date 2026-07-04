@@ -76,18 +76,31 @@ function loadFileset(): Promise<Fileset> {
 /**
  * Create a fresh lite-model, VIDEO-mode PoseLandmarker. Callers own the
  * instance and must call close() when done with it (e.g. on unmount).
+ *
+ * GPU first for speed, CPU as the fallback: some mobile browsers (older
+ * Android WebViews, some iOS Safari versions) cannot initialise the WebGL
+ * GPU delegate, and slower tracking beats no tracking.
  */
 export async function createPoseLandmarker(): Promise<PoseLandmarkerHandle> {
   const vision = await loadVision();
   const fileset = await loadFileset();
-  const landmarker = await vision.PoseLandmarker.createFromOptions(fileset, {
-    baseOptions: {
-      modelAssetPath: MODEL_URL,
-      delegate: "GPU",
-    },
-    runningMode: "VIDEO",
-    numPoses: 1,
-  });
+
+  const create = (delegate: "GPU" | "CPU") =>
+    vision.PoseLandmarker.createFromOptions(fileset, {
+      baseOptions: {
+        modelAssetPath: MODEL_URL,
+        delegate,
+      },
+      runningMode: "VIDEO",
+      numPoses: 1,
+    });
+
+  let landmarker: Awaited<ReturnType<typeof create>>;
+  try {
+    landmarker = await create("GPU");
+  } catch {
+    landmarker = await create("CPU");
+  }
 
   return {
     detect: (video, timestampMs) => {
