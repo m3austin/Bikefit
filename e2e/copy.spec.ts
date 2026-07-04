@@ -45,6 +45,11 @@ const routes = [
   "/running",
   "/running/video",
   "/running/drills",
+  "/lifting",
+  "/lifting/squat",
+  "/lifting/bench",
+  "/lifting/deadlift",
+  "/lifting/drills",
   "/privacy",
 ];
 

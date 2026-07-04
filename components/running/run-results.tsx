@@ -193,6 +193,7 @@ export function RunResultsSection({
         primary={primary}
         secondary={secondary}
         drillsBase="/running/drills"
+        allClearNote="No change to make from these numbers. Run, and let how you feel over the next weeks have the final say."
       />
 
       <div className="flex flex-col gap-3">

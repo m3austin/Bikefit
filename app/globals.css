@@ -135,6 +135,14 @@
   --accent: #ff8a5c;
   --accent-ink: #3a1607;
 }
+.sport-lifting {
+  --accent: #8a5a00;
+  --accent-ink: #ffffff;
+}
+.dark .sport-lifting {
+  --accent: #e8b34b;
+  --accent-ink: #3a2a00;
+}
 
 /* Respect prefers-reduced-motion everywhere (UX-UI-Design §2.4, §6). */
 @media (prefers-reduced-motion: reduce) {

@@ -36,8 +36,8 @@ export const SPORTS: readonly SportModule[] = [
     brand: "LiftFit",
     sport: "lifting",
     accent: "#E8B34B",
+    accentClass: "sport-lifting",
     tagline: "Bench, squat, deadlift, with a second pair of eyes.",
-    comingSoon: true,
   },
   {
     slug: "swimming",

@@ -119,6 +119,7 @@ export function GolfResultsSection({
         primary={primary}
         secondary={secondary}
         drillsBase="/golf/drills"
+        allClearNote="No change to make from these numbers. Go play, and let your strikes have the final say."
       />
 
       <div className="flex flex-col gap-3">

@@ -34,6 +34,10 @@ const staticRoutes = [
   ["/running", "running home"],
   ["/running/video", "running video upload"],
   ["/running/drills", "running drills"],
+  ["/lifting", "lifting home"],
+  ["/lifting/squat", "squat analysis"],
+  ["/lifting/deadlift", "deadlift analysis"],
+  ["/lifting/drills", "lifting drills"],
   ["/privacy", "privacy policy"],
 ] as const;
 

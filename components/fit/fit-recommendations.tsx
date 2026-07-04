@@ -37,11 +37,14 @@ export function FitRecommendations({
   primary,
   secondary,
   drillsBase,
+  allClearNote = "No change to make from these numbers. Ride, and let comfort have the final say.",
 }: {
   primary: Finding | null;
   secondary: Finding[];
   /** The sport's drill guide base path, e.g. "/cycling/drills". */
   drillsBase: string;
+  /** The sport's own words for the everything-in-range state. */
+  allClearNote?: string;
 }) {
   if (!primary) {
     return (
@@ -54,10 +57,7 @@ export function FitRecommendations({
           <p className="font-medium text-ink">
             Everything we measured sits inside its target range
           </p>
-          <p className="text-ink-muted">
-            No change to make from these numbers. Ride, and let comfort have
-            the final say.
-          </p>
+          <p className="text-ink-muted">{allClearNote}</p>
         </div>
       </div>
     );

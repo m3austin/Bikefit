@@ -26,20 +26,23 @@ test("hub lists the live sport and marks the rest coming soon", async ({
     page.getByRole("main").getByRole("link", { name: /BikeFit/ }),
   ).toHaveAttribute("href", "/cycling");
 
-  // GolfFit and RunFit are live too.
+  // GolfFit, RunFit, and LiftFit are live too.
   await expect(
     page.getByRole("main").getByRole("link", { name: /GolfFit/ }),
   ).toHaveAttribute("href", "/golf");
   await expect(
     page.getByRole("main").getByRole("link", { name: /RunFit/ }),
   ).toHaveAttribute("href", "/running");
+  await expect(
+    page.getByRole("main").getByRole("link", { name: /LiftFit/ }),
+  ).toHaveAttribute("href", "/lifting");
 
   // Coming-soon sports are visible but deliberately not links.
-  for (const brand of ["LiftFit", "SwimFit"]) {
+  for (const brand of ["SwimFit"]) {
     await expect(page.getByText(brand, { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: new RegExp(brand) })).toHaveCount(0);
   }
-  await expect(page.getByText("Coming soon")).toHaveCount(2);
+  await expect(page.getByText("Coming soon")).toHaveCount(1);
 
   // The maker's signature is present.
   await expect(page.getByText(/A Marshmallow Labs experiment/)).toBeVisible();

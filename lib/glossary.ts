@@ -42,7 +42,12 @@ export type GlossaryId =
   | "foot-strike"
   | "vertical-oscillation"
   | "pelvic-drop"
-  | "gait";
+  | "gait"
+  | "brace"
+  | "hip-hinge"
+  | "lockout"
+  | "midfoot"
+  | "touch-point";
 
 export type GlossaryEntry = {
   /** The word as it should read in a sentence. */
@@ -230,6 +235,31 @@ export const GLOSSARY: Record<GlossaryId, GlossaryEntry> = {
     term: "gait",
     definition:
       "The overall pattern of how you run: where your feet land, how your body moves, and the rhythm holding it together.",
+  },
+  brace: {
+    term: "bracing",
+    definition:
+      "Filling your belly with air and tightening your whole midsection before a lift, like preparing to be poked in the stomach. It is what holds your spine steady under load.",
+  },
+  "hip-hinge": {
+    term: "hip hinge",
+    definition:
+      "Bending by pushing your hips back with a flat back, rather than folding your spine. The movement pattern behind deadlifts, and the one worth learning empty-handed first.",
+  },
+  lockout: {
+    term: "lockout",
+    definition:
+      "The finished top of a rep: standing tall with hips fully open, or arms fully extended on a press. A rep is not done until it is locked out.",
+  },
+  midfoot: {
+    term: "midfoot",
+    definition:
+      "The middle of your foot, roughly under the shoelace knot. Heavy lifts balance best with the bar over it.",
+  },
+  "touch-point": {
+    term: "touch point",
+    definition:
+      "The spot on your chest where the bar lands in a bench press. Good pressing touches the same spot every rep.",
   },
 };
 
