@@ -69,8 +69,8 @@ function Hero() {
         <p className="max-w-prose text-lg leading-relaxed text-ink-muted">
           Point your phone at yourself doing the thing. SportFits measures
           what it sees, right on your device, and hands you the one tweak
-          worth trying. No account, no lab coat required. Cycling is live;
-          more sports are warming up.
+          worth trying. No account, no lab coat required. Cycling, golf,
+          running, and lifting are live, with swimming in beta.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">

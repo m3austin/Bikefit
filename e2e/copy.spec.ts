@@ -50,6 +50,9 @@ const routes = [
   "/lifting/bench",
   "/lifting/deadlift",
   "/lifting/drills",
+  "/swimming",
+  "/swimming/video",
+  "/swimming/drills",
   "/privacy",
 ];
 

@@ -67,9 +67,15 @@ export default function HomePage() {
                   <span className="measurement text-lg font-semibold text-ink">
                     {sport.brand}
                   </span>
-                  <span className="shrink-0 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-ink">
-                    Live
-                  </span>
+                  {sport.beta ? (
+                    <span className="shrink-0 rounded-full bg-warn/15 px-2.5 py-1 text-xs font-medium text-ink">
+                      Beta
+                    </span>
+                  ) : (
+                    <span className="shrink-0 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-ink">
+                      Live
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm leading-relaxed text-ink-muted">
                   {sport.tagline}

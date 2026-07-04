@@ -5,6 +5,7 @@ import { FitModeChoice } from "@/components/fit/mode-choice";
 import { GolfHome } from "@/components/golf/golf-home";
 import { RunHome } from "@/components/running/run-home";
 import { LiftHome } from "@/components/lifting/lift-home";
+import { SwimHome } from "@/components/swimming/swim-home";
 import { getLiveSport } from "@/lib/sports/registry";
 
 export async function generateMetadata({
@@ -27,5 +28,6 @@ export default async function SportHomePage({
   if (sport === "golf") return <GolfHome />;
   if (sport === "running") return <RunHome />;
   if (sport === "lifting") return <LiftHome />;
+  if (sport === "swimming") return <SwimHome />;
   notFound();
 }

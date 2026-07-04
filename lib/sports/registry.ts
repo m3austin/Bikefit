@@ -44,8 +44,9 @@ export const SPORTS: readonly SportModule[] = [
     brand: "SwimFit",
     sport: "swimming",
     accent: "#4BA3E8",
+    accentClass: "sport-swimming",
     tagline: "Front crawl feedback, no coach on the deck required.",
-    comingSoon: true,
+    beta: true,
   },
 ];
 

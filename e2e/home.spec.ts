@@ -15,34 +15,29 @@ test("hub renders with wordmark, heading, and primary CTA", async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
-test("hub lists the live sport and marks the rest coming soon", async ({
+test("hub lists every sport as a live link, swimming as beta", async ({
   page,
 }) => {
   await page.goto("/");
 
-  // BikeFit is live and routes to its module (scoped to main: the header
-  // nav also carries a BikeFit link).
-  await expect(
-    page.getByRole("main").getByRole("link", { name: /BikeFit/ }),
-  ).toHaveAttribute("href", "/cycling");
-
-  // GolfFit, RunFit, and LiftFit are live too.
-  await expect(
-    page.getByRole("main").getByRole("link", { name: /GolfFit/ }),
-  ).toHaveAttribute("href", "/golf");
-  await expect(
-    page.getByRole("main").getByRole("link", { name: /RunFit/ }),
-  ).toHaveAttribute("href", "/running");
-  await expect(
-    page.getByRole("main").getByRole("link", { name: /LiftFit/ }),
-  ).toHaveAttribute("href", "/lifting");
-
-  // Coming-soon sports are visible but deliberately not links.
-  for (const brand of ["SwimFit"]) {
-    await expect(page.getByText(brand, { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: new RegExp(brand) })).toHaveCount(0);
+  // Every sport routes to its module (scoped to main: the header nav also
+  // carries a BikeFit link).
+  const links: Array<[RegExp, string]> = [
+    [/BikeFit/, "/cycling"],
+    [/GolfFit/, "/golf"],
+    [/RunFit/, "/running"],
+    [/LiftFit/, "/lifting"],
+    [/SwimFit/, "/swimming"],
+  ];
+  for (const [name, href] of links) {
+    await expect(
+      page.getByRole("main").getByRole("link", { name }),
+    ).toHaveAttribute("href", href);
   }
-  await expect(page.getByText("Coming soon")).toHaveCount(1);
+
+  // Nothing is coming soon anymore; swimming carries a Beta chip.
+  await expect(page.getByText("Coming soon")).toHaveCount(0);
+  await expect(page.getByText("Beta", { exact: true })).toHaveCount(1);
 
   // The maker's signature is present.
   await expect(page.getByText(/A Marshmallow Labs experiment/)).toBeVisible();

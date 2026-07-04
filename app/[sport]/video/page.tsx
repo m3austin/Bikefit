@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { GolfVideoAnalysis } from "@/components/golf/golf-video-analysis";
 import { RunVideoAnalysis } from "@/components/running/run-video-analysis";
+import { SwimVideoAnalysis } from "@/components/swimming/swim-video-analysis";
 import { VideoAnalysis } from "@/components/fit/video-analysis";
 
 export const metadata: Metadata = { title: "Video analysis" };
@@ -16,5 +17,6 @@ export default async function VideoFitPage({
   if (sport === "cycling") return <VideoAnalysis />;
   if (sport === "golf") return <GolfVideoAnalysis />;
   if (sport === "running") return <RunVideoAnalysis />;
+  if (sport === "swimming") return <SwimVideoAnalysis />;
   notFound();
 }

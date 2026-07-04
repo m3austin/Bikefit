@@ -38,6 +38,9 @@ const staticRoutes = [
   ["/lifting/squat", "squat analysis"],
   ["/lifting/deadlift", "deadlift analysis"],
   ["/lifting/drills", "lifting drills"],
+  ["/swimming", "swimming home"],
+  ["/swimming/video", "swimming video upload"],
+  ["/swimming/drills", "swimming drills"],
   ["/privacy", "privacy policy"],
 ] as const;
 

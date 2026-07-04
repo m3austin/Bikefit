@@ -143,6 +143,14 @@
   --accent: #e8b34b;
   --accent-ink: #3a2a00;
 }
+.sport-swimming {
+  --accent: #1f6fb2;
+  --accent-ink: #ffffff;
+}
+.dark .sport-swimming {
+  --accent: #4ba3e8;
+  --accent-ink: #06243a;
+}
 
 /* Respect prefers-reduced-motion everywhere (UX-UI-Design §2.4, §6). */
 @media (prefers-reduced-motion: reduce) {
