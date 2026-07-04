@@ -41,14 +41,16 @@ const VERDICT_TEXT: Record<Verdict, string> = {
   out_of_range: "Out of range",
 };
 
+// Tinted backgrounds carry the verdict color; text stays ink for AA contrast
+// in the light theme (colored text on its own tint reads under 4.5:1).
 function verdictClasses(verdict: Verdict): { pill: string; dot: string } {
   switch (verdict) {
     case "in_range":
-      return { pill: "bg-accent/15 text-accent", dot: "bg-accent" };
+      return { pill: "bg-accent/15 text-ink", dot: "bg-accent" };
     case "marginal":
-      return { pill: "bg-warn/15 text-warn", dot: "bg-warn" };
+      return { pill: "bg-warn/15 text-ink", dot: "bg-warn" };
     case "out_of_range":
-      return { pill: "bg-danger/15 text-danger", dot: "bg-danger" };
+      return { pill: "bg-danger/15 text-ink", dot: "bg-danger" };
   }
 }
 

@@ -26,6 +26,7 @@ const staticRoutes = [
   ["/fits", "garage (empty)"],
   ["/settings", "settings"],
   ["/method", "method"],
+  ["/adjust", "adjustment guide"],
 ] as const;
 
 for (const [path, label] of staticRoutes) {
@@ -44,6 +45,9 @@ test("no serious a11y violations: results", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await completeWizard(page);
   await page.getByRole("heading", { name: "Saddle height" }).waitFor();
+  // Client-side navigation swaps <title>; under load axe can catch the
+  // milliseconds between removal and re-insertion. Let it settle first.
+  await page.waitForFunction(() => document.title.length > 0);
   const violations = await audit(page);
   expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
 });

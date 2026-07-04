@@ -12,6 +12,7 @@
  * ======================================================================
  */
 
+import type { AdjustmentId } from "@/lib/adjustments";
 import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
 
 export type Verdict = "in_range" | "marginal" | "out_of_range";
@@ -156,6 +157,11 @@ export type FitRule = {
   /** 1 is highest. Ties resolve by array order (deterministic). */
   priority: number;
   confidence: Confidence;
+  /**
+   * The /adjust procedure that shows how to make this change with a wrench.
+   * Absent for recheck-style findings (re-record, in-person assessment).
+   */
+  adjust?: AdjustmentId;
 };
 
 /*
@@ -178,6 +184,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 1,
     confidence: "high",
+    adjust: "saddle-height",
   },
   {
     id: "saddle-too-high",
@@ -193,6 +200,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 1,
     confidence: "high",
+    adjust: "saddle-height",
   },
   {
     id: "reach-too-long",
@@ -208,6 +216,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 2,
     confidence: "medium",
+    adjust: "reach",
   },
   {
     id: "bars-too-low",
@@ -222,6 +231,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 2,
     confidence: "medium",
+    adjust: "bar-height",
   },
   {
     id: "left-knee-collapse",
@@ -238,6 +248,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 2,
     confidence: "medium",
+    adjust: "cleats",
   },
   {
     id: "right-knee-collapse",
@@ -254,6 +265,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 2,
     confidence: "medium",
+    adjust: "cleats",
   },
   {
     id: "hip-too-closed",
@@ -268,6 +280,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 3,
     confidence: "low",
+    adjust: "bar-height",
   },
   {
     id: "knee-bows-out",
@@ -286,6 +299,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 3,
     confidence: "low",
+    adjust: "cleats",
   },
   {
     id: "left-right-asymmetry",
@@ -317,6 +331,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 4,
     confidence: "low",
+    adjust: "reach",
   },
   {
     id: "hip-tilt",
@@ -348,6 +363,7 @@ export const FIT_RULES: readonly FitRule[] = [
     },
     priority: 5,
     confidence: "low",
+    adjust: "bar-height",
   },
   {
     id: "timing-uneven",
@@ -377,6 +393,8 @@ export type FitFinding = {
   magnitude: string;
   priority: number;
   confidence: Confidence;
+  /** Deep link target in the adjustment guide, when a procedure exists. */
+  adjust?: AdjustmentId;
 };
 
 /**
@@ -398,6 +416,7 @@ export function evaluateFitRules(v: MeasuredValues): {
       magnitude: r.recommendation.magnitude,
       priority: r.priority,
       confidence: r.confidence,
+      adjust: r.adjust,
     }),
   );
   // Array#sort is stable, so equal priorities keep their rule-array order.

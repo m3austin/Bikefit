@@ -4,6 +4,7 @@ import * as React from "react";
 
 import { FitCard } from "@/components/fit/fit-card";
 import { FitRange } from "@/components/fit/fit-range";
+import { GlossaryTerm } from "@/components/fit/glossary-term";
 import { cn } from "@/lib/utils";
 import type { FitInput, FitResult } from "@/lib/engine";
 import type { Unit } from "@/lib/units";
@@ -80,6 +81,7 @@ export function ResultCards({
         <FitCard
           title="Saddle height"
           emphasis
+          adjustHref="/adjust#saddle-height"
           applySteps={copy.saddleHeight.applySteps}
           troubleshooting={copy.saddleHeight.troubleshooting}
           method={copy.saddleHeight.method}
@@ -98,7 +100,12 @@ export function ResultCards({
       {/* 2. Saddle setback */}
       <RevealItem index={next()} animate={animate}>
         <FitCard
-          title="Saddle setback"
+          title={
+            <>
+              Saddle <GlossaryTerm id="setback" />
+            </>
+          }
+          adjustHref="/adjust#saddle-setback"
           applySteps={copy.setback.applySteps}
           troubleshooting={copy.setback.troubleshooting}
           method={copy.setback.method}
@@ -118,7 +125,12 @@ export function ResultCards({
       {result.barDrop && copy.barDrop ? (
         <RevealItem index={next()} animate={animate}>
           <FitCard
-            title="Handlebar drop"
+            title={
+              <>
+                Handlebar <GlossaryTerm id="bar-drop">drop</GlossaryTerm>
+              </>
+            }
+            adjustHref="/adjust#bar-height"
             applySteps={copy.barDrop.applySteps}
             troubleshooting={copy.barDrop.troubleshooting}
             method={copy.barDrop.method}
@@ -162,6 +174,7 @@ export function ResultCards({
       <RevealItem index={next()} animate={animate}>
         <FitCard
           title="Reach"
+          adjustHref="/adjust#reach"
           applySteps={copy.reach.applySteps}
           troubleshooting={copy.reach.troubleshooting}
           method={copy.reach.method}
@@ -198,6 +211,7 @@ export function ResultCards({
         <RevealItem index={next()} animate={animate}>
           <FitCard
             title="Cleat position"
+            adjustHref="/adjust#cleats"
             applySteps={copy.cleat.applySteps}
             troubleshooting={copy.cleat.troubleshooting}
           >

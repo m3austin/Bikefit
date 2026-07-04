@@ -37,6 +37,7 @@ const routes = [
   "/fit",
   "/fit/new",
   "/fit/video",
+  "/adjust",
 ];
 
 for (const route of routes) {

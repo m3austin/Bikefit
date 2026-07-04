@@ -1,5 +1,7 @@
-import { CheckCircle2, Wrench } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, Wrench } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Confidence, FitFinding } from "@/lib/fit-rules";
 
@@ -19,9 +21,10 @@ function ConfidenceChip({ confidence }: { confidence: Confidence }) {
   return (
     <span
       className={cn(
+        // Tint carries the state; ink text keeps AA contrast in light theme.
         "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium",
         confidence === "high"
-          ? "bg-accent/15 text-accent"
+          ? "bg-accent/15 text-ink"
           : "bg-surface-2 text-ink-muted",
       )}
     >
@@ -70,6 +73,14 @@ export function FitRecommendations({
         <p className="text-sm leading-relaxed text-ink-muted">
           {primary.description}
         </p>
+        {primary.adjust ? (
+          <Button asChild variant="outline" size="sm" className="self-start">
+            <Link href={`/adjust#${primary.adjust}`}>
+              <Wrench />
+              How do I do this?
+            </Link>
+          </Button>
+        ) : null}
       </div>
 
       {secondary.length > 0 ? (
@@ -97,6 +108,15 @@ export function FitRecommendations({
                   <span className="text-sm text-ink-muted">
                     {finding.description}
                   </span>
+                  {finding.adjust ? (
+                    <Link
+                      href={`/adjust#${finding.adjust}`}
+                      className="inline-flex items-center gap-1 self-start text-sm text-accent underline-offset-2 hover:underline"
+                    >
+                      Step-by-step guide
+                      <ArrowRight className="size-3.5" aria-hidden="true" />
+                    </Link>
+                  ) : null}
                 </div>
               </li>
             ))}

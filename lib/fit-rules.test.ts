@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { ADJUSTMENTS } from "@/lib/adjustments";
 import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
 import {
   FIT_RULES,
@@ -208,6 +209,19 @@ describe("evaluateFitRules", () => {
     });
     expect(primary?.ruleId).toBe("left-knee-collapse");
     expect(secondary[0]?.ruleId).toBe("right-knee-collapse");
+  });
+
+  it("every wrench-actionable rule deep-links to a real /adjust procedure", () => {
+    const validIds = new Set(ADJUSTMENTS.map((a) => a.id));
+    for (const rule of FIT_RULES) {
+      if (rule.recommendation.direction === "recheck") {
+        // Re-record / in-person findings have no wrench procedure to link.
+        expect(rule.adjust, rule.id).toBeUndefined();
+      } else {
+        expect(rule.adjust, `${rule.id} should link a procedure`).toBeDefined();
+        expect(validIds.has(rule.adjust ?? "saddle-height"), rule.id).toBe(true);
+      }
+    }
   });
 
   it("every rule can fire and carries a complete recommendation", () => {

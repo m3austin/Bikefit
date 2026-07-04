@@ -17,6 +17,7 @@ import { InseamIllustration } from "@/components/fit/illustrations/inseam-illust
 import { MeasureGuide } from "@/components/fit/measure-guide";
 import { MeasurementInput } from "@/components/fit/measurement-input";
 import { FrontalReportView } from "@/components/fit/frontal-report";
+import { GlossaryTerm } from "@/components/fit/glossary-term";
 import { StepProgress } from "@/components/fit/step-progress";
 import { StrokeReportView } from "@/components/fit/stroke-report";
 import { UnitToggle } from "@/components/fit/unit-toggle";
@@ -323,6 +324,19 @@ export default function ComponentsGalleryPage() {
         note="Optional multi-select in the video flow. Choosing None clears the others, and vice versa."
       >
         <DiscomfortSelect value={discomfort} onChange={setDiscomfort} />
+      </Section>
+
+      <Section
+        title="GlossaryTerm"
+        note="Tap, keyboard focus, or hover reveals the definition; Escape or an outside tap dismisses. Definitions come only from lib/glossary.ts."
+      >
+        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+          Your saddle <GlossaryTerm id="setback" /> and{" "}
+          <GlossaryTerm id="bar-drop">bar drop</GlossaryTerm> work together,
+          and both are set at the <GlossaryTerm id="seatpost" /> and{" "}
+          <GlossaryTerm id="stem" />. Tighten carbon parts with a{" "}
+          <GlossaryTerm id="torque-wrench">torque wrench</GlossaryTerm>.
+        </p>
       </Section>
 
       <Section

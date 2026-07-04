@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Wrench } from "lucide-react";
 
 import {
   Collapsible,
@@ -11,7 +12,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export type FitCardProps = {
-  title: string;
+  /** Usually a string; may carry inline GlossaryTerm wrapping for jargon. */
+  title: React.ReactNode;
   /** Larger treatment for the hero (saddle height) card. */
   emphasis?: boolean;
   /** Typically a FitRange, or any body content. */
@@ -24,6 +26,8 @@ export type FitCardProps = {
   method?: React.ReactNode;
   /** Open the first available section by default (used by the gallery). */
   startOpen?: boolean;
+  /** Deep link into the /adjust guide's matching procedure. */
+  adjustHref?: string;
 };
 
 function Section({
@@ -65,6 +69,7 @@ export function FitCard({
   troubleshooting,
   method,
   startOpen = false,
+  adjustHref,
 }: FitCardProps) {
   return (
     <section
@@ -99,6 +104,18 @@ export function FitCard({
             <Section label="If it doesn't feel right">{troubleshooting}</Section>
           ) : null}
           {method ? <Section label="Show the method">{method}</Section> : null}
+        </div>
+      ) : null}
+
+      {adjustHref ? (
+        <div className="mt-4 border-t border-line pt-3 print:hidden">
+          <Link
+            href={adjustHref}
+            className="inline-flex items-center gap-1.5 text-sm text-accent underline-offset-2 hover:underline"
+          >
+            <Wrench className="size-4" aria-hidden="true" />
+            How do I do this? Step-by-step guide
+          </Link>
         </div>
       ) : null}
     </section>
