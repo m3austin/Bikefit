@@ -22,14 +22,16 @@ test("lifting home lists the three lifts and leads with safety", async ({
   });
 
   await page.goto("/lifting");
+  // Scope to main: the header sub-bar also carries per-lift links.
+  const main = page.getByRole("main");
   await expect(
-    page.getByRole("link", { name: /Back squat/ }),
+    main.getByRole("link", { name: /Back squat/ }),
   ).toHaveAttribute("href", "/lifting/squat");
   await expect(
-    page.getByRole("link", { name: /Bench press/ }),
+    main.getByRole("link", { name: /Bench press/ }),
   ).toHaveAttribute("href", "/lifting/bench");
   await expect(
-    page.getByRole("link", { name: /Deadlift/ }),
+    main.getByRole("link", { name: /Deadlift/ }),
   ).toHaveAttribute("href", "/lifting/deadlift");
   // The safety note is present, not buried.
   await expect(page.getByText(/not a spotter and not a coach/)).toBeVisible();

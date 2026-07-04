@@ -53,4 +53,7 @@ export type SportModule = {
   beta?: boolean;
   /** CSS class remapping --accent inside this sport's pages (globals.css). */
   accentClass?: string;
+  /** The sport's own tools, shown in the header sub-bar while inside it.
+   * Absolute hrefs; the sport brand links to the sport home separately. */
+  tools?: ReadonlyArray<{ label: string; href: string }>;
 };

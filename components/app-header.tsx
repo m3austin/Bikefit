@@ -1,22 +1,42 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+import { getLiveSport } from "@/lib/sports/registry";
+import { cn } from "@/lib/utils";
 
-const NAV = [
+/*
+ * App shell header, two tiers so the chrome matches the multi-sport shape:
+ *
+ *  - A sport-agnostic GLOBAL bar (wordmark, Home, Saved fits, Rabbit hole,
+ *    Settings) that is the same everywhere.
+ *  - A contextual SPORT sub-bar that appears only while you are inside a
+ *    sport (/golf, /cycling, ...), showing that sport's brand and its own
+ *    tools in the sport's accent. Pick a sport on the hub, and its menus
+ *    show up; leave it, and they go away.
+ *
+ * Client so it can read the current route; the ThemeToggle island stays.
+ */
+
+const GLOBAL_NAV = [
   { href: "/", label: "Home" },
-  { href: "/cycling", label: "BikeFit" },
   { href: "/fits", label: "Saved fits" },
-  { href: "/cycling/drills", label: "Drills" },
   { href: "/method", label: "Rabbit hole" },
   { href: "/settings", label: "Settings" },
 ] as const;
 
-/*
- * Server-rendered app shell header. The wordmark and nav are static; only the
- * ThemeToggle is a client island. A polished nav/landing arrives in Phase 5,
- * this exists so every route is reachable and themed during Phase 0.
- */
 export function AppHeader() {
+  const pathname = usePathname() ?? "/";
+  const firstSegment = pathname.split("/")[1] ?? "";
+  const sport = getLiveSport(firstSegment);
+
+  const isActive = (href: string) =>
+    href === "/"
+      ? pathname === "/"
+      : pathname === href || pathname.startsWith(`${href}/`);
+
   return (
     <header className="sticky top-0 z-10 border-b border-line bg-bg/80 backdrop-blur print:hidden">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
@@ -30,11 +50,17 @@ export function AppHeader() {
           aria-label="Primary"
           className="hidden flex-1 items-center gap-1 sm:flex"
         >
-          {NAV.map((item) => (
+          {GLOBAL_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-sm px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink"
+              aria-current={isActive(item.href) ? "page" : undefined}
+              className={cn(
+                "rounded-sm px-3 py-2 text-sm transition-colors hover:bg-surface-2 hover:text-ink",
+                isActive(item.href)
+                  ? "font-medium text-ink"
+                  : "text-ink-muted",
+              )}
             >
               {item.label}
             </Link>
@@ -44,6 +70,38 @@ export function AppHeader() {
           <ThemeToggle />
         </div>
       </div>
+
+      {sport ? (
+        <div className={cn("border-t border-line bg-surface/60", sport.accentClass)}>
+          <nav
+            aria-label={`${sport.brand} tools`}
+            className="mx-auto flex w-full max-w-5xl items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6"
+          >
+            <Link
+              href={`/${sport.slug}`}
+              aria-current={isActive(`/${sport.slug}`) && !sport.tools?.some((t) => isActive(t.href)) ? "page" : undefined}
+              className="measurement mr-1 shrink-0 rounded-sm px-2 py-1 text-sm font-semibold text-accent"
+            >
+              {sport.brand}
+            </Link>
+            {sport.tools?.map((tool) => (
+              <Link
+                key={tool.href}
+                href={tool.href}
+                aria-current={isActive(tool.href) ? "page" : undefined}
+                className={cn(
+                  "shrink-0 rounded-sm px-3 py-1 text-sm transition-colors hover:bg-surface-2 hover:text-ink",
+                  isActive(tool.href)
+                    ? "bg-surface-2 font-medium text-ink"
+                    : "text-ink-muted",
+                )}
+              >
+                {tool.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }

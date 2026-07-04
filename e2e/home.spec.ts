@@ -20,8 +20,9 @@ test("hub lists every sport as a live link, swimming as beta", async ({
 }) => {
   await page.goto("/");
 
-  // Every sport routes to its module (scoped to main: the header nav also
-  // carries a BikeFit link).
+  // Every sport routes to its module. Scoped to main: the global header no
+  // longer carries per-sport links (those are the contextual sub-bar shown
+  // only inside a sport), so this checks the hub cards specifically.
   const links: Array<[RegExp, string]> = [
     [/BikeFit/, "/cycling"],
     [/GolfFit/, "/golf"],

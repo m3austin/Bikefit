@@ -36,12 +36,14 @@ test("mode choice links to Quick Fit and Video Fit Analysis", async ({ page }) =
   });
 
   await page.goto("/fit");
-  await expect(page.getByRole("link", { name: /Quick Fit/ })).toHaveAttribute(
+  // Scope to main: the header sub-bar also carries a Quick Fit / Video link.
+  const main = page.getByRole("main");
+  await expect(main.getByRole("link", { name: /Quick Fit/ })).toHaveAttribute(
     "href",
     "/cycling/fit/new",
   );
   await expect(
-    page.getByRole("link", { name: /Video Fit Analysis/ }),
+    main.getByRole("link", { name: /Video Fit Analysis/ }),
   ).toHaveAttribute("href", "/cycling/video");
 
   expect(errors).toEqual([]);

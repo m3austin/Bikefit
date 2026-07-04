@@ -14,6 +14,11 @@ export const SPORTS: readonly SportModule[] = [
     sport: "cycling",
     accent: "#3DDC97",
     tagline: "Dial in your bike so the miles feel easy.",
+    tools: [
+      { label: "Quick Fit", href: "/cycling/fit/new" },
+      { label: "Video", href: "/cycling/video" },
+      { label: "Drills", href: "/cycling/drills" },
+    ],
   },
   {
     slug: "golf",
@@ -22,6 +27,11 @@ export const SPORTS: readonly SportModule[] = [
     accent: "#2AB8B8",
     accentClass: "sport-golf",
     tagline: "Your swing, measured. Your excuses, filmed.",
+    tools: [
+      { label: "Swing video", href: "/golf/video" },
+      { label: "Club fitting", href: "/golf/clubs" },
+      { label: "Drills", href: "/golf/drills" },
+    ],
   },
   {
     slug: "running",
@@ -30,6 +40,10 @@ export const SPORTS: readonly SportModule[] = [
     accent: "#FF8A5C",
     accentClass: "sport-running",
     tagline: "Check your stride before your knees do.",
+    tools: [
+      { label: "Video", href: "/running/video" },
+      { label: "Drills", href: "/running/drills" },
+    ],
   },
   {
     slug: "lifting",
@@ -38,6 +52,12 @@ export const SPORTS: readonly SportModule[] = [
     accent: "#E8B34B",
     accentClass: "sport-lifting",
     tagline: "Bench, squat, deadlift, with a second pair of eyes.",
+    tools: [
+      { label: "Squat", href: "/lifting/squat" },
+      { label: "Bench", href: "/lifting/bench" },
+      { label: "Deadlift", href: "/lifting/deadlift" },
+      { label: "Drills", href: "/lifting/drills" },
+    ],
   },
   {
     slug: "swimming",
@@ -47,6 +67,10 @@ export const SPORTS: readonly SportModule[] = [
     accentClass: "sport-swimming",
     tagline: "Front crawl feedback, no coach on the deck required.",
     beta: true,
+    tools: [
+      { label: "Video", href: "/swimming/video" },
+      { label: "Drills", href: "/swimming/drills" },
+    ],
   },
 ];
 
