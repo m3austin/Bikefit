@@ -60,13 +60,17 @@ function Hero() {
   return (
     <section className="flex flex-col items-start gap-6 pt-4">
       <div className="flex flex-col gap-4">
+        <p className="measurement text-sm font-medium uppercase tracking-wide text-accent">
+          SportFits
+        </p>
         <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-5xl">
-          A professional starting bike fit, from your own measurements.
+          Free technique analysis for the sports you love.
         </h1>
         <p className="max-w-prose text-lg leading-relaxed text-ink-muted">
-          Answer a few questions, measure with a tape and a book, and get an
-          honest set of ranges you can dial in with a hex key. No account,
-          nothing to install, in about ten minutes.
+          Point your phone at yourself doing the thing. SportFits measures
+          what it sees, right on your device, and hands you the one tweak
+          worth trying. No account, no lab coat required. Cycling is live;
+          more sports are warming up.
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
