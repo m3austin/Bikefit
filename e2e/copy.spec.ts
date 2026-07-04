@@ -38,6 +38,10 @@ const routes = [
   "/cycling/fit/new",
   "/cycling/video",
   "/cycling/drills",
+  "/golf",
+  "/golf/clubs",
+  "/golf/video",
+  "/golf/drills",
   "/privacy",
 ];
 

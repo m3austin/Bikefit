@@ -57,3 +57,8 @@ export function formatDeg(degrees: number): string {
 export function formatPct(percent: number): string {
   return `${percent.toFixed(1)}%`;
 }
+
+/** A time ratio, e.g. golf tempo "2.8:1" (backswing over downswing). */
+export function formatRatio(ratio: number): string {
+  return `${ratio.toFixed(1)}:1`;
+}

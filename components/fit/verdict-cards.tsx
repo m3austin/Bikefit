@@ -1,38 +1,22 @@
 import { cn } from "@/lib/utils";
-import { formatDeg, formatPct } from "@/lib/format";
-import type { MetricVerdict, Verdict } from "@/lib/sports/cycling/rules";
+import { formatDeg, formatPct, formatRatio } from "@/lib/format";
+import type { TargetRange, Verdict } from "@/lib/kernel/rules";
 
 /*
  * Measured value vs target range, one card per metric, with an at-a-glance
- * in/marginal/out indicator (Stage 3). The band shows the target zone inside
- * a wider display window; the dot is the measured value, colored by verdict.
+ * in/marginal/out indicator. Sport-agnostic presentation: each sport maps
+ * its verdicts to items (label, hint, value, target, verdict); the band
+ * shows the target zone inside a wider display window, and the dot is the
+ * measured value, colored by verdict.
  */
 
-const LABELS: Record<MetricVerdict["id"], { label: string; hint: string }> = {
-  kneeAtBdc: {
-    label: "Knee at stroke bottom",
-    hint: "Mean across strokes",
-  },
-  elbow: { label: "Elbow angle", hint: "Mean across the recording" },
-  torso: { label: "Torso angle", hint: "Lean from horizontal" },
-  hipMin: { label: "Hip at its most closed", hint: "Tightest point per stroke" },
-  leftPeakDev: {
-    label: "Left knee tracking",
-    hint: "Peak inward offset, % of hip width",
-  },
-  rightPeakDev: {
-    label: "Right knee tracking",
-    hint: "Peak inward offset, % of hip width",
-  },
-  kneeDevAsymmetry: {
-    label: "Left-right difference",
-    hint: "Knee tracking gap between legs",
-  },
-  hipDropAbs: { label: "Hip tilt", hint: "Sideways pelvic lean" },
-  timingOffset: {
-    label: "Stroke timing",
-    hint: "180 degrees is evenly alternating",
-  },
+export type VerdictItem = {
+  key: string;
+  label: string;
+  hint: string;
+  value: number;
+  target: TargetRange;
+  verdict: Verdict;
 };
 
 const VERDICT_TEXT: Record<Verdict, string> = {
@@ -54,23 +38,29 @@ function verdictClasses(verdict: Verdict): { pill: string; dot: string } {
   }
 }
 
-function TargetBand({ verdict: v }: { verdict: MetricVerdict }) {
+function formatFor(target: TargetRange): (value: number) => string {
+  if (target.unit === "deg") return formatDeg;
+  if (target.unit === "pct") return formatPct;
+  return formatRatio;
+}
+
+function TargetBand({ item }: { item: VerdictItem }) {
   // Display window: the target plus three margins each side, so marginal and
   // out-of-range values still land visibly inside the band.
-  const windowLow = v.target.low - 3 * v.target.margin;
-  const windowHigh = v.target.high + 3 * v.target.margin;
+  const windowLow = item.target.low - 3 * item.target.margin;
+  const windowHigh = item.target.high + 3 * item.target.margin;
   const span = windowHigh - windowLow;
   const pct = (x: number) =>
     Math.min(98, Math.max(2, ((x - windowLow) / span) * 100));
-  const { dot } = verdictClasses(v.verdict);
+  const { dot } = verdictClasses(item.verdict);
 
   return (
     <div className="relative h-2 w-full rounded-full bg-surface-2">
       <div
         className="absolute inset-y-0 rounded-full bg-accent/25"
         style={{
-          left: `${pct(v.target.low)}%`,
-          width: `${pct(v.target.high) - pct(v.target.low)}%`,
+          left: `${pct(item.target.low)}%`,
+          width: `${pct(item.target.high) - pct(item.target.low)}%`,
         }}
         aria-hidden="true"
       />
@@ -79,32 +69,31 @@ function TargetBand({ verdict: v }: { verdict: MetricVerdict }) {
           "absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-bg",
           dot,
         )}
-        style={{ left: `${pct(v.value)}%` }}
+        style={{ left: `${pct(item.value)}%` }}
         aria-hidden="true"
       />
     </div>
   );
 }
 
-export function VerdictCards({ verdicts }: { verdicts: MetricVerdict[] }) {
-  if (verdicts.length === 0) return null;
+export function VerdictCards({ items }: { items: VerdictItem[] }) {
+  if (items.length === 0) return null;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {verdicts.map((v) => {
-        const meta = LABELS[v.id];
-        const format = v.target.unit === "deg" ? formatDeg : formatPct;
-        const { pill } = verdictClasses(v.verdict);
+      {items.map((item) => {
+        const format = formatFor(item.target);
+        const { pill } = verdictClasses(item.verdict);
         return (
           <div
-            key={v.id}
+            key={item.key}
             className="flex flex-col gap-3 rounded-md border border-line bg-surface p-4"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-ink">
-                  {meta.label}
+                  {item.label}
                 </span>
-                <span className="text-xs text-ink-muted">{meta.hint}</span>
+                <span className="text-xs text-ink-muted">{item.hint}</span>
               </div>
               <span
                 className={cn(
@@ -112,18 +101,18 @@ export function VerdictCards({ verdicts }: { verdicts: MetricVerdict[] }) {
                   pill,
                 )}
               >
-                {VERDICT_TEXT[v.verdict]}
+                {VERDICT_TEXT[item.verdict]}
               </span>
             </div>
-            <TargetBand verdict={v} />
+            <TargetBand item={item} />
             <p className="text-sm text-ink-muted">
               Measured{" "}
               <span className="measurement font-medium text-ink">
-                {format(v.value)}
+                {format(item.value)}
               </span>{" "}
               against{" "}
               <span className="measurement">
-                {format(v.target.low)} to {format(v.target.high)}
+                {format(item.target.low)} to {format(item.target.high)}
               </span>
             </p>
           </div>

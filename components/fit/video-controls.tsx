@@ -20,15 +20,12 @@ const SPEEDS = [
   { value: "0.25", label: "0.25x" },
 ] as const;
 
-/** A key moment in the pedal stroke, marked on the timeline after analysis. */
+/** A key moment found by the analysis, marked on the timeline. Labels are
+ * sport-supplied ("stroke bottom", "top", "impact"); ticks color by tone. */
 export type TimelineMarker = {
   tMs: number;
-  kind: "bdc" | "three";
-};
-
-const MARKER_LABEL: Record<TimelineMarker["kind"], string> = {
-  bdc: "stroke bottom",
-  three: "3 o'clock",
+  label: string;
+  tone?: "accent" | "muted";
 };
 
 export function VideoControls({
@@ -53,9 +50,15 @@ export function VideoControls({
 }) {
   const hasMarkers = duration > 0 && (markers?.length ?? 0) > 0;
 
-  const jumpToNext = (kind: TimelineMarker["kind"]) => {
+  // Distinct labels, in first-appearance order, drive the jump buttons.
+  const markerLabels: string[] = [];
+  for (const m of markers ?? []) {
+    if (!markerLabels.includes(m.label)) markerLabels.push(m.label);
+  }
+
+  const jumpToNext = (label: string) => {
     const times = (markers ?? [])
-      .filter((m) => m.kind === kind)
+      .filter((m) => m.label === label)
       .map((m) => m.tMs / 1000)
       .sort((a, b) => a - b);
     if (times.length === 0) return;
@@ -89,10 +92,10 @@ export function VideoControls({
             >
               {(markers ?? []).map((m, i) => (
                 <span
-                  key={`${m.kind}-${i}`}
+                  key={`${m.label}-${i}`}
                   className={cn(
                     "absolute h-3 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full",
-                    m.kind === "bdc" ? "bg-accent" : "bg-ink-muted",
+                    m.tone === "muted" ? "bg-ink-muted" : "bg-accent",
                   )}
                   style={{
                     left: `${Math.min(99, Math.max(1, (m.tMs / 1000 / duration) * 100))}%`,
@@ -134,16 +137,16 @@ export function VideoControls({
 
         {hasMarkers ? (
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-            {(["bdc", "three"] as const).map((kind) => (
+            {markerLabels.map((label) => (
               <Button
-                key={kind}
+                key={label}
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => jumpToNext(kind)}
+                onClick={() => jumpToNext(label)}
               >
                 <ChevronsRight className="size-4" />
-                Next {MARKER_LABEL[kind]}
+                Next {label}
               </Button>
             ))}
           </div>

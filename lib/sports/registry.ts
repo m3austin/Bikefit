@@ -20,8 +20,8 @@ export const SPORTS: readonly SportModule[] = [
     brand: "GolfFit",
     sport: "golf",
     accent: "#2AB8B8",
+    accentClass: "sport-golf",
     tagline: "Your swing, measured. Your excuses, filmed.",
-    comingSoon: true,
   },
   {
     slug: "running",

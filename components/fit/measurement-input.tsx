@@ -260,7 +260,11 @@ export function MeasurementInput(props: MeasurementInputProps) {
           onKeyDown={(e) => {
             if (e.key !== "Enter") return;
             e.preventDefault();
-            onEnter?.(result(run({ type: "commit" })));
+            // Commit FIRST, unconditionally: an optional call short-circuits
+            // its argument evaluation, so `onEnter?.(f(run(...)))` would skip
+            // the commit entirely for consumers without an onEnter handler.
+            const committed = result(run({ type: "commit" }));
+            onEnter?.(committed);
           }}
         />
 

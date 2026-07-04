@@ -1,9 +1,49 @@
 import { FitRecommendations } from "@/components/fit/fit-recommendations";
 import { FrontalReportView } from "@/components/fit/frontal-report";
 import { StrokeReportView } from "@/components/fit/stroke-report";
-import { VerdictCards } from "@/components/fit/verdict-cards";
+import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
 import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
-import { evaluateFitRules, extractMeasuredValues } from "@/lib/sports/cycling/rules";
+import {
+  evaluateFitRules,
+  extractMeasuredValues,
+  type MetricVerdict,
+} from "@/lib/sports/cycling/rules";
+
+/** Cycling's display names for its verdict metrics. */
+const VERDICT_LABELS: Record<MetricVerdict["id"], { label: string; hint: string }> = {
+  kneeAtBdc: { label: "Knee at stroke bottom", hint: "Mean across strokes" },
+  elbow: { label: "Elbow angle", hint: "Mean across the recording" },
+  torso: { label: "Torso angle", hint: "Lean from horizontal" },
+  hipMin: { label: "Hip at its most closed", hint: "Tightest point per stroke" },
+  leftPeakDev: {
+    label: "Left knee tracking",
+    hint: "Peak inward offset, % of hip width",
+  },
+  rightPeakDev: {
+    label: "Right knee tracking",
+    hint: "Peak inward offset, % of hip width",
+  },
+  kneeDevAsymmetry: {
+    label: "Left-right difference",
+    hint: "Knee tracking gap between legs",
+  },
+  hipDropAbs: { label: "Hip tilt", hint: "Sideways pelvic lean" },
+  timingOffset: {
+    label: "Stroke timing",
+    hint: "180 degrees is evenly alternating",
+  },
+};
+
+function toItems(verdicts: MetricVerdict[]): VerdictItem[] {
+  return verdicts.map((v) => ({
+    key: v.id,
+    label: VERDICT_LABELS[v.id].label,
+    hint: VERDICT_LABELS[v.id].hint,
+    value: v.value,
+    target: v.target,
+    verdict: v.verdict,
+  }));
+}
 
 /*
  * The Stage 3 results section: recommendations (one change at a time),
@@ -46,11 +86,15 @@ export function VideoResultsSection({
         </p>
       </div>
 
-      <FitRecommendations primary={primary} secondary={secondary} />
+      <FitRecommendations
+        primary={primary}
+        secondary={secondary}
+        drillsBase="/cycling/drills"
+      />
 
       <div className="flex flex-col gap-3">
         <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards verdicts={verdicts} />
+        <VerdictCards items={toItems(verdicts)} />
       </div>
 
       {sideReport ? (

@@ -27,6 +27,10 @@ const staticRoutes = [
   ["/settings", "settings"],
   ["/method", "method"],
   ["/cycling/drills", "adjustment guide"],
+  ["/golf", "golf home"],
+  ["/golf/clubs", "club fitting"],
+  ["/golf/video", "golf video upload"],
+  ["/golf/drills", "golf drills"],
   ["/privacy", "privacy policy"],
 ] as const;
 

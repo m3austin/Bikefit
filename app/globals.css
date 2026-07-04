@@ -113,6 +113,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Per-sport accents (docs/sportfit/04 section 2). Each sport module may remap
+ * the accent inside its own pages; everything else keeps reading the same
+ * token names, so components stay accent-agnostic. Values are AA-checked per
+ * theme like the base pair.
+ */
+.sport-golf {
+  --accent: #0c7373;
+  --accent-ink: #ffffff;
+}
+.dark .sport-golf {
+  --accent: #2ab8b8;
+  --accent-ink: #06302f;
+}
+
 /* Respect prefers-reduced-motion everywhere (UX-UI-Design §2.4, §6). */
 @media (prefers-reduced-motion: reduce) {
   *,

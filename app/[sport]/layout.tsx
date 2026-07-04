@@ -20,6 +20,8 @@ export default async function SportLayout({
   params: Promise<{ sport: string }>;
 }) {
   const { sport } = await params;
-  if (!getLiveSport(sport)) notFound();
-  return children;
+  const sportModule = getLiveSport(sport);
+  if (!sportModule) notFound();
+  if (!sportModule.accentClass) return children;
+  return <div className={sportModule.accentClass}>{children}</div>;
 }

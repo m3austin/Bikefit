@@ -9,23 +9,30 @@ import {
 import { VideoDropzone } from "@/components/fit/video-dropzone";
 import { VideoResultsSection } from "@/components/fit/video-results";
 import { VideoUpload } from "@/components/fit/video-upload";
-import { VideoWorkspace } from "@/components/fit/video-workspace";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
+import {
+  VideoWorkspace,
+  type AnalyzeOutcome,
+} from "@/components/kernel/video-workspace";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import {
+  MIN_STROKES_FOR_REPORT,
+  buildFrontalStrokeReport,
+  buildStrokeReport,
+  type FrontalStrokeReport,
+  type StrokeReport,
+} from "@/lib/sports/cycling/biomechanics";
 
 /*
- * Top-level state machine for Video Fit Analysis: a required side-view video,
- * an optional straight-on (front or rear) companion video, and an optional
- * discomfort question. Neither video file ever leaves this component (no
- * fetch/XHR anywhere here or below); each only ever becomes an in-memory
- * object URL for its <video> element. The two views cannot be told apart
- * automatically, so each has its own clearly-labeled slot.
+ * Cycling (BikeFit) video analysis: a required side-view video, an optional
+ * straight-on (front or rear) companion video, and an optional discomfort
+ * question, composed on the kernel video workspace. Neither video file ever
+ * leaves this component (no fetch/XHR anywhere here or below); each only
+ * ever becomes an in-memory object URL for its <video> element.
  *
  * Object URLs are created and revoked inside the event handlers, not in
  * render or effects: StrictMode double-invokes render (which would leak a
  * URL) and re-runs effects (whose cleanup would revoke the URL the video is
- * still playing). Handlers run exactly once per user action. The final URLs
- * are released with the document; object URLs are per-page, so that is
- * bounded.
+ * still playing). Handlers run exactly once per user action.
  */
 
 type Slot = { file: File; url: string };
@@ -88,6 +95,57 @@ export function VideoAnalysis() {
     front.clear();
   }, [front]);
 
+  // The module's analyzers: compute the typed report, keep it in module
+  // state, hand the workspace shell just the outcome and timeline markers.
+  const analyzeSide = React.useCallback(
+    (frames: TimedFrame[], aspect: number): AnalyzeOutcome => {
+      const report = buildStrokeReport(frames, aspect);
+      if (report.strokeCount < MIN_STROKES_FOR_REPORT) {
+        return {
+          ok: false,
+          reason:
+            "We couldn't find at least two full pedal strokes in this video. Record a few steady, seated revolutions from directly side-on and try again.",
+        };
+      }
+      setSideReport(report);
+      return {
+        ok: true,
+        markers: [
+          ...report.bdcTMs.map((tMs) => ({
+            tMs,
+            label: "stroke bottom",
+            tone: "accent" as const,
+          })),
+          ...report.threeOClockTMs.map((tMs) => ({
+            tMs,
+            label: "3 o'clock",
+            tone: "muted" as const,
+          })),
+        ],
+      };
+    },
+    [],
+  );
+
+  const analyzeFront = React.useCallback(
+    (frames: TimedFrame[], aspect: number): AnalyzeOutcome => {
+      const report = buildFrontalStrokeReport(frames, aspect);
+      if (
+        Math.min(report.strokeCountLeft, report.strokeCountRight) <
+        MIN_STROKES_FOR_REPORT
+      ) {
+        return {
+          ok: false,
+          reason:
+            "We couldn't find at least two full pedal strokes for each leg. Keep both feet in frame, straight-on and level, with steady seated pedaling, and try again.",
+        };
+      }
+      setFrontalReport(report);
+      return { ok: true };
+    },
+    [],
+  );
+
   if (!side.slot && !front.slot) {
     return <VideoUpload onSelect={selectSide} />;
   }
@@ -101,12 +159,14 @@ export function VideoAnalysis() {
           key={side.slot.url}
           videoUrl={side.slot.url}
           fileName={side.slot.file.name}
-          view="side"
           label="Side view"
+          analyzeLabel="Analyze pedal strokes"
+          analyzeHelper="Plays the video once and measures your joint angles, on this device."
+          runningNoun="your pedaling"
+          showFacingSide
+          analyze={analyzeSide}
+          onReset={() => setSideReport(null)}
           onChooseDifferent={clearSide}
-          onAnalysis={(result) =>
-            setSideReport(result?.kind === "side" ? result.report : null)
-          }
         />
       ) : (
         <section className="flex flex-col gap-3">
@@ -139,15 +199,14 @@ export function VideoAnalysis() {
             key={front.slot.url}
             videoUrl={front.slot.url}
             fileName={front.slot.file.name}
-            view="front"
             label="Front or rear view"
             changeLabel="Remove front video"
+            analyzeLabel="Analyze knee tracking"
+            analyzeHelper="Plays the video once and measures knee tracking, symmetry, and hip drop, on this device."
+            runningNoun="your pedaling"
+            analyze={analyzeFront}
+            onReset={() => setFrontalReport(null)}
             onChooseDifferent={clearFront}
-            onAnalysis={(result) =>
-              setFrontalReport(
-                result?.kind === "frontal" ? result.report : null,
-              )
-            }
           />
         ) : (
           <VideoDropzone

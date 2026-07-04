@@ -24,4 +24,6 @@ export type SportModule = {
   tagline: string;
   /** True until the module ships; hub shows a coming-soon card, no routes. */
   comingSoon?: boolean;
+  /** CSS class remapping --accent inside this sport's pages (globals.css). */
+  accentClass?: string;
 };

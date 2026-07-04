@@ -12,78 +12,85 @@ import {
 import { drawPoseOverlay } from "@/components/fit/draw-pose";
 import { useThemeColor } from "@/components/fit/use-theme-color";
 import {
-  MIN_STROKES_FOR_REPORT,
   averageFrameVisibility,
-  buildFrontalStrokeReport,
-  buildStrokeReport,
   detectFacingSide,
   isSustainedLowConfidence,
   type ConfidenceSample,
-  type FrontalStrokeReport,
-  type StrokeReport,
   type TimedFrame,
-} from "@/lib/sports/cycling/biomechanics";
+} from "@/lib/kernel/tracking";
 import {
   createPoseLandmarker,
   type PoseLandmarkerHandle,
 } from "@/lib/pose-landmarker";
 import type { PoseFrame } from "@/lib/pose-model";
 
+/*
+ * The kernel video workspace (docs/sportfit/01-Architecture): playback,
+ * on-device pose tracking with the skeleton overlay, confidence handling,
+ * decode-error guidance, and the analyze pass. Sport modules supply the
+ * words and the math: an analyze closure that eats collected frames,
+ * stores its own typed report wherever it likes, and returns ok (with
+ * optional timeline markers) or a plain-language failure reason.
+ */
+
 const CONFIDENCE_WINDOW = 60; // frames considered for the "sustained low" check
 const CONFIDENCE_THRESHOLD = 0.4;
 const SIDE_VOTE_MAX_FRAMES = 240;
-// Analysis-pass caps so a long clip can't grow memory without bound. 60 s at
-// 60 fps is far more than the few revolutions the analysis needs.
+// Analysis-pass caps so a long clip can't grow memory without bound.
 const MAX_ANALYSIS_MS = 60_000;
 const MAX_ANALYSIS_SAMPLES = 3_600;
 
 type LandmarkerState = "loading" | "ready" | "error";
 
-/** What an analysis pass produced, discriminated by camera view. */
-export type WorkspaceAnalysis =
-  | { kind: "side"; report: StrokeReport }
-  | { kind: "frontal"; report: FrontalStrokeReport };
+/** What a module's analyze closure reports back to the workspace shell. */
+export type AnalyzeOutcome =
+  | { ok: true; markers?: TimelineMarker[] }
+  | { ok: false; reason: string };
 
 type AnalysisState =
   | { status: "idle" }
   | { status: "running" }
-  | { status: "done"; result: WorkspaceAnalysis }
+  | { status: "done"; markers?: TimelineMarker[] }
   | { status: "failed"; reason: string };
-
-const FAILURE_REASON = {
-  side: "We couldn't find at least two full pedal strokes in this video. Record a few steady, seated revolutions from directly side-on and try again.",
-  front:
-    "We couldn't find at least two full pedal strokes for each leg. Keep both feet in frame, straight-on and level, with steady seated pedaling, and try again.",
-} as const;
 
 export function VideoWorkspace({
   videoUrl,
   fileName,
   onChooseDifferent,
-  view = "side",
-  label = "Video fit analysis",
+  label,
   changeLabel = "Choose a different video",
-  onAnalysis,
+  analyzeLabel,
+  analyzeHelper,
+  runningNoun = "your movement",
+  showFacingSide = false,
+  analyze,
+  onReset,
 }: {
   videoUrl: string;
   fileName: string;
   onChooseDifferent: () => void;
-  /**
-   * "side" runs facing-side detection and the sagittal pedal-stroke analysis;
-   * "front" runs the frontal-plane analysis (knee tracking, symmetry, hip
-   * drop). Facing-side detection must never run on a front view: it assumes
-   * one side is occluded, which is false head-on.
-   */
-  view?: "side" | "front";
-  /** Kicker text identifying this slot when two videos are on screen. */
-  label?: string;
+  /** Kicker text identifying this slot when several videos are on screen. */
+  label: string;
   changeLabel?: string;
+  /** The analyze button, e.g. "Analyze pedal strokes", "Analyze your swing". */
+  analyzeLabel: string;
+  /** Helper sentence beside the button (plain-precise register). */
+  analyzeHelper: string;
+  /** Fills "Analyzing {runningNoun}, 3s / 12s" while the pass runs. */
+  runningNoun?: string;
   /**
-   * Mirrors analysis results to the parent, which owns all results rendering
-   * (the Stage 3 results section). Called with null when a new pass starts
-   * or one fails, so the parent never holds a stale report.
+   * Show the live facing-side readout. Only meaningful for side-on views;
+   * facing-side detection assumes one side is occluded, false head-on.
    */
-  onAnalysis?: (result: WorkspaceAnalysis | null) => void;
+  showFacingSide?: boolean;
+  /**
+   * The module's analysis: consume the collected frames (media-timed, aspect
+   * given), store any typed report in the module's own state, and return ok
+   * with optional timeline markers, or a plain-language failure reason.
+   */
+  analyze: (frames: TimedFrame[], aspectRatio: number) => AnalyzeOutcome;
+  /** Called when a new pass starts, so the parent clears its stale report. */
+  onReset?: () => void;
 }) {
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -124,14 +131,16 @@ export function VideoWorkspace({
     accentColorRef.current = accentColor;
   }, [accentColor]);
 
-  // Keep the parent callback out of effect/callback dependency lists.
-  const onAnalysisRef = React.useRef(onAnalysis);
+  // Keep the module callbacks out of effect/callback dependency lists.
+  const analyzeRef = React.useRef(analyze);
+  const onResetRef = React.useRef(onReset);
   React.useEffect(() => {
-    onAnalysisRef.current = onAnalysis;
-  }, [onAnalysis]);
+    analyzeRef.current = analyze;
+    onResetRef.current = onReset;
+  }, [analyze, onReset]);
 
   // Create this workspace's own pose landmarker (VIDEO mode is stateful, so
-  // side and front views can't share one; see lib/pose-landmarker.ts) and
+  // two on-screen videos can't share one; see lib/pose-landmarker.ts) and
   // close it on unmount. retryToken only changes via the "Try again" button,
   // which resets state to "loading" itself, so this effect never needs to
   // setState synchronously on entry.
@@ -165,31 +174,13 @@ export function VideoWorkspace({
     const frames = collectedRef.current;
     collectedRef.current = [];
 
-    let result: WorkspaceAnalysis;
-    let enoughStrokes: boolean;
-    if (view === "side") {
-      const report = buildStrokeReport(frames, aspectRef.current);
-      result = { kind: "side", report };
-      enoughStrokes = report.strokeCount >= MIN_STROKES_FOR_REPORT;
+    const outcome = analyzeRef.current(frames, aspectRef.current);
+    if (outcome.ok) {
+      setAnalysis({ status: "done", markers: outcome.markers });
     } else {
-      const report = buildFrontalStrokeReport(frames, aspectRef.current);
-      result = { kind: "frontal", report };
-      enoughStrokes =
-        Math.min(report.strokeCountLeft, report.strokeCountRight) >=
-        MIN_STROKES_FOR_REPORT;
+      setAnalysis({ status: "failed", reason: outcome.reason });
     }
-
-    if (!enoughStrokes) {
-      setAnalysis({
-        status: "failed",
-        reason: view === "side" ? FAILURE_REASON.side : FAILURE_REASON.front,
-      });
-      onAnalysisRef.current?.(null);
-    } else {
-      setAnalysis({ status: "done", result });
-      onAnalysisRef.current?.(result);
-    }
-  }, [view]);
+  }, []);
 
   const draw = React.useCallback((frame: PoseFrame) => {
     const canvas = canvasRef.current;
@@ -221,8 +212,8 @@ export function VideoWorkspace({
       if (samples.length > CONFIDENCE_WINDOW * 3) samples.shift();
 
       // Facing-side detection is meaningless (and misleading) on a head-on
-      // view, so only the side view feeds the vote buffer.
-      if (view === "side") {
+      // view, so only side-on views feed the vote buffer.
+      if (showFacingSide) {
         const sideFrames = sideFramesRef.current;
         sideFrames.push(frame);
         if (sideFrames.length > SIDE_VOTE_MAX_FRAMES) sideFrames.shift();
@@ -232,7 +223,9 @@ export function VideoWorkspace({
       if (now - lastUiUpdateRef.current > 150) {
         lastUiUpdateRef.current = now;
         setLiveConfidence(visibility);
-        if (view === "side") setSide(detectFacingSide(sideFramesRef.current).side);
+        if (showFacingSide) {
+          setSide(detectFacingSide(sideFramesRef.current).side);
+        }
         setLowConfidence(
           isSustainedLowConfidence(samples, {
             windowSize: CONFIDENCE_WINDOW,
@@ -241,7 +234,7 @@ export function VideoWorkspace({
         );
       }
     },
-    [draw, finalizeAnalysis, view],
+    [draw, finalizeAnalysis, showFacingSide],
   );
 
   // Per-frame pose detection, synced to actual decoded video frames when the
@@ -360,7 +353,7 @@ export function VideoWorkspace({
     collectedRef.current = [];
     analyzingRef.current = true;
     setAnalysis({ status: "running" });
-    onAnalysisRef.current?.(null);
+    onResetRef.current?.();
     setPlaybackRate(1);
     video.playbackRate = 1;
     video.currentTime = 0;
@@ -375,22 +368,8 @@ export function VideoWorkspace({
   }, []);
 
   const analyzing = analysis.status === "running";
-
-  // Key frames land on the timeline once the side analysis has run (the
-  // frontal report carries no single set of key frames; it is two legs).
-  const markers: TimelineMarker[] | undefined =
-    analysis.status === "done" && analysis.result.kind === "side"
-      ? [
-          ...analysis.result.report.bdcTMs.map((tMs) => ({
-            tMs,
-            kind: "bdc" as const,
-          })),
-          ...analysis.result.report.threeOClockTMs.map((tMs) => ({
-            tMs,
-            kind: "three" as const,
-          })),
-        ]
-      : undefined;
+  const markers =
+    analysis.status === "done" ? analysis.markers : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -485,7 +464,7 @@ export function VideoWorkspace({
         ) : null}
         {landmarkerState === "ready" ? (
           <>
-            {view === "side" ? (
+            {showFacingSide ? (
               <span>
                 Tracking side:{" "}
                 <span className="measurement font-medium text-ink">
@@ -510,7 +489,7 @@ export function VideoWorkspace({
       {analyzing ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-surface p-4">
           <p className="text-sm text-ink" role="status">
-            Analyzing your pedaling,{" "}
+            Analyzing {runningNoun},{" "}
             <span className="measurement">
               {currentTime.toFixed(0)}s / {duration ? duration.toFixed(0) : "?"}s
             </span>
@@ -541,17 +520,9 @@ export function VideoWorkspace({
             disabled={landmarkerState !== "ready" || duration === 0}
           >
             <Activity />
-            {analysis.status === "done"
-              ? "Analyze again"
-              : view === "side"
-                ? "Analyze pedal strokes"
-                : "Analyze knee tracking"}
+            {analysis.status === "done" ? "Analyze again" : analyzeLabel}
           </Button>
-          <p className="text-sm text-ink-muted">
-            {view === "side"
-              ? "Plays the video once and measures your joint angles, on this device."
-              : "Plays the video once and measures knee tracking, symmetry, and hip drop, on this device."}
-          </p>
+          <p className="text-sm text-ink-muted">{analyzeHelper}</p>
         </div>
       ) : null}
 
@@ -568,7 +539,6 @@ export function VideoWorkspace({
           <p className="text-sm text-ink-muted">{analysis.reason}</p>
         </div>
       ) : null}
-
     </div>
   );
 }
