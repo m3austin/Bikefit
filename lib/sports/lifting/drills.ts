@@ -13,6 +13,7 @@ export type LiftDrillId =
   | "setup-height"
   | "box-depth"
   | "heels-down"
+  | "knees-out"
   | "bench-groove"
   | "lockout-finish";
 
@@ -109,6 +110,28 @@ export const LIFT_DRILLS: readonly LiftDrill[] = [
     coachNote:
       "If heels-down is impossible at any stance width, or the ankle pinches, a physiotherapist can tell restriction from structure. Do not load a position you cannot hold empty.",
     glossaryIds: ["midfoot"],
+  },
+  {
+    id: "knees-out",
+    title: "Knees out (squat tracking)",
+    why: "Knees that cave inward at the bottom load the joint sideways and bleed power. Tracking them out over your toes lines the joint up and lets the big hip muscles do the work. This shows up best from the front, which is why the front view flags it.",
+    gear: ["A resistance band around the knees is ideal, but optional", "A light bar or bodyweight"],
+    difficulty: "moderate",
+    time: "10 minutes",
+    steps: [
+      "Set your stance so your toes point out slightly, the same direction your knees will travel.",
+      "With a band around your knees (or just the cue), squat while actively pressing your knees out against the band so they stay over your toes.",
+      "Feel your backside and outer hips switch on; that is what holds the knees out under load.",
+      "Ten slow bodyweight or light-bar reps keeping the knees tracking, then re-film from the front.",
+      "Compare your knee-tracking and symmetry readings with the last analysis.",
+    ],
+    tips: [
+      "Cue the knees out only as far as over your toes, not wider; forcing them past that is its own problem.",
+      "If only one knee caves, add single-leg work (split squats, step-ups) for the weaker side.",
+    ],
+    coachNote:
+      "A knee that caves with pain, or one that always caves far more than the other, is worth a physiotherapist's eyes before loading it heavier.",
+    glossaryIds: [],
   },
   {
     id: "bench-groove",

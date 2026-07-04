@@ -27,6 +27,7 @@ export type CameraView =
   | "running-side"
   | "running-rear"
   | "lifting-side"
+  | "lifting-front"
   | "swimming-side";
 
 const VIEWS: Record<CameraView, ViewPreset> = {
@@ -64,6 +65,11 @@ const VIEWS: Record<CameraView, ViewPreset> = {
     position: "right",
     label: "Side on",
     caption: "Directly to your side, whole body and the bar in frame.",
+  },
+  "lifting-front": {
+    position: "front",
+    label: "Front on",
+    caption: "Directly in front, whole body and both knees in frame.",
   },
   "swimming-side": {
     position: "right",

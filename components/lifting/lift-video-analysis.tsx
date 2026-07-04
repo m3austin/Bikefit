@@ -16,45 +16,77 @@ import {
   buildLiftReport,
   type LiftReport,
 } from "@/lib/sports/lifting/biomechanics";
+import {
+  buildSquatFrontReport,
+  type SquatFrontReport,
+} from "@/lib/sports/lifting/squat-front";
 import { getLift } from "@/lib/sports/lifting/lifts";
 
 /*
  * LiftFit form video analysis for one lift, composed on the kernel video
- * workspace. The lift config supplies the tracker, event names, cues, and
- * metrics; this shell is lift-agnostic. Only the lift id crosses the server
- * boundary (the config carries functions, which cannot); the client resolves
- * the full config from the pure lifts registry. Videos never leave the
- * device (kernel rule); object URLs are created and revoked in event
- * handlers only (StrictMode-safe, same as cycling).
+ * workspace. Side view (required) reads the sagittal plane rep by rep. The
+ * SQUAT also offers an optional front view for the frontal plane the side
+ * cannot see: knee tracking (caving) and left-right symmetry. Other lifts get
+ * no front view (their faults are sagittal). Videos never leave the device;
+ * object URLs are created and revoked in handlers only (StrictMode-safe).
  */
 
 type Slot = { file: File; url: string };
+type Captured = { frames: TimedFrame[]; aspect: number };
 
-export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
-  const config = getLift(liftId);
+function useVideoSlot() {
   const urlRef = React.useRef<string | null>(null);
   const [slot, setSlot] = React.useState<Slot | null>(null);
-  const [report, setReport] = React.useState<LiftReport | null>(null);
-  const [cap, setCap] = React.useState<{ frames: TimedFrame[]; aspect: number } | null>(
-    null,
-  );
-
   const select = React.useCallback((file: File) => {
-    setReport(null);
-    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     const url = URL.createObjectURL(file);
     urlRef.current = url;
     setSlot({ file, url });
   }, []);
-
   const clear = React.useCallback(() => {
-    setReport(null);
-    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
     setSlot(null);
   }, []);
+  return { slot, select, clear };
+}
+
+export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
+  const config = getLift(liftId);
+  const supportsFront = liftId === "squat";
+
+  const side = useVideoSlot();
+  const front = useVideoSlot();
+  const [report, setReport] = React.useState<LiftReport | null>(null);
+  const [cap, setCap] = React.useState<Captured | null>(null);
+  const [frontReport, setFrontReport] = React.useState<SquatFrontReport | null>(
+    null,
+  );
+
+  const selectSide = React.useCallback(
+    (file: File) => {
+      setReport(null);
+      setCap(null);
+      side.select(file);
+    },
+    [side],
+  );
+  const clearSide = React.useCallback(() => {
+    setReport(null);
+    setCap(null);
+    side.clear();
+  }, [side]);
+  const selectFront = React.useCallback(
+    (file: File) => {
+      setFrontReport(null);
+      front.select(file);
+    },
+    [front],
+  );
+  const clearFront = React.useCallback(() => {
+    setFrontReport(null);
+    front.clear();
+  }, [front]);
 
   const analyze = React.useCallback(
     (frames: TimedFrame[], aspect: number): AnalyzeOutcome => {
@@ -80,10 +112,20 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
     [config],
   );
 
+  const analyzeFront = React.useCallback(
+    (frames: TimedFrame[], aspect: number): AnalyzeOutcome => {
+      const outcome = buildSquatFrontReport(frames, aspect);
+      if (!outcome.ok) return outcome;
+      setFrontReport(outcome.report);
+      return { ok: true };
+    },
+    [],
+  );
+
   // Guarded by the page (notFound); this satisfies the type and never renders.
   if (!config) return null;
 
-  if (!slot) {
+  if (!side.slot && !front.slot) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
@@ -103,6 +145,9 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
           <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
             Film a set from the side and the analysis reads your form rep by
             rep, on this device. The video is never uploaded anywhere.
+            {supportsFront
+              ? " You can add an optional front view too, for knee tracking and left-right symmetry."
+              : ""}
           </p>
         </div>
 
@@ -122,12 +167,19 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
         </div>
 
         <VideoDropzone
-          onSelect={select}
+          onSelect={selectSide}
           prompt={`Drag a side-on ${config.name.toLowerCase()} video here, or choose a file`}
           chooseLabel="Choose video"
         />
 
-        <CameraSetupDiagram view="lifting-side" className="sm:max-w-sm" />
+        {supportsFront ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <CameraSetupDiagram view="lifting-side" />
+            <CameraSetupDiagram view="lifting-front" />
+          </div>
+        ) : (
+          <CameraSetupDiagram view="lifting-side" className="sm:max-w-sm" />
+        )}
 
         <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
           <h2 className="text-sm font-medium text-ink">
@@ -161,27 +213,82 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
         <h1 className="sr-only">{config.name} form analysis</h1>
       </div>
 
-      <VideoWorkspace
-        key={slot.url}
-        videoUrl={slot.url}
-        fileName={slot.file.name}
-        label={config.name}
-        analyzeLabel="Analyze this set"
-        analyzeHelper="Plays the video once and reads your form rep by rep, on this device."
-        runningNoun="your set"
-        analyze={analyze}
-        onReset={() => {
-          setReport(null);
-          setCap(null);
-        }}
-        onChooseDifferent={clear}
-      />
+      {side.slot ? (
+        <VideoWorkspace
+          key={side.slot.url}
+          videoUrl={side.slot.url}
+          fileName={side.slot.file.name}
+          label={supportsFront ? "Side on" : config.name}
+          analyzeLabel="Analyze this set"
+          analyzeHelper="Plays the video once and reads your form rep by rep, on this device."
+          runningNoun="your set"
+          analyze={analyze}
+          onReset={() => {
+            setReport(null);
+            setCap(null);
+          }}
+          onChooseDifferent={clearSide}
+        />
+      ) : (
+        <section className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold text-ink">Side on</h2>
+            <p className="text-sm text-ink-muted">
+              Required. The main view: depth, balance, and the bar path.
+            </p>
+          </div>
+          <VideoDropzone
+            onSelect={selectSide}
+            prompt={`Drag a side-on ${config.name.toLowerCase()} video here, or choose a file`}
+            chooseLabel="Choose side video"
+          />
+        </section>
+      )}
+
+      {supportsFront ? (
+        <section className="flex flex-col gap-3 border-t border-line pt-8">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold text-ink">
+              Front on{" "}
+              <span className="font-normal text-ink-muted">(optional)</span>
+            </h2>
+            <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
+              Directly in front, whole body and both knees in frame. Adds knee
+              tracking and left-right symmetry, which the side view cannot see.
+              Film the same kind of set.
+            </p>
+          </div>
+          {front.slot ? (
+            <VideoWorkspace
+              key={front.slot.url}
+              videoUrl={front.slot.url}
+              fileName={front.slot.file.name}
+              label="Front on"
+              changeLabel="Remove front video"
+              analyzeLabel="Analyze knee tracking"
+              analyzeHelper="Plays the video once and reads knee tracking and symmetry, on this device."
+              runningNoun="your set"
+              analyze={analyzeFront}
+              onReset={() => setFrontReport(null)}
+              onChooseDifferent={clearFront}
+            />
+          ) : (
+            <VideoDropzone
+              compact
+              onSelect={selectFront}
+              prompt="Drag a front-on squat video here, or choose a file"
+              chooseLabel="Choose front video"
+            />
+          )}
+        </section>
+      ) : null}
 
       <LiftResultsSection
         config={config}
         report={report}
+        frontReport={frontReport}
         frames={cap?.frames}
-        videoUrl={slot.url}
+        videoUrl={side.slot?.url}
         aspect={cap?.aspect}
       />
     </div>

@@ -50,6 +50,18 @@ test("a lift page shows the upload slot and its cues", async ({ page }) => {
   ).toBeVisible();
 });
 
+test("only the squat offers an optional front view", async ({ page }) => {
+  // Squat entry signals both views (side + front camera diagrams).
+  await page.goto("/lifting/squat");
+  await expect(page.getByText("Front on", { exact: true })).toBeVisible();
+  await expect(page.getByText(/optional front view/i)).toBeVisible();
+  // Deadlift and bench are side-only: no front view offered.
+  await page.goto("/lifting/deadlift");
+  await expect(page.getByText("Front on", { exact: true })).toHaveCount(0);
+  await page.goto("/lifting/bench");
+  await expect(page.getByText("Front on", { exact: true })).toHaveCount(0);
+});
+
 test("an unknown lift 404s", async ({ page }) => {
   const res = await page.goto("/lifting/curl");
   expect(res?.status()).toBe(404);

@@ -33,13 +33,18 @@ export function VideoUpload({
         <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
           Set your phone on a chair or tripod, side-on to your trainer, and
           record a few pedal strokes. Everything below runs on this device:
-          the video is never uploaded anywhere.
+          the video is never uploaded anywhere. Start with the side view; you
+          can add an optional front or rear view next for knee tracking and
+          left-right symmetry.
         </p>
       </div>
 
       <VideoDropzone onSelect={onSelect} />
 
-      <CameraSetupDiagram view="cycling-side" className="sm:max-w-sm" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <CameraSetupDiagram view="cycling-side" />
+        <CameraSetupDiagram view="cycling-front" />
+      </div>
 
       <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5">
         <h2 className="text-sm font-medium text-ink">

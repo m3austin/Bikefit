@@ -6,7 +6,11 @@ import { toneForVerdict } from "@/lib/kernel/scoring";
 import type { TimedFrame } from "@/lib/kernel/tracking";
 import { SIDE_LANDMARKS } from "@/lib/pose-model";
 import type { LiftReport } from "@/lib/sports/lifting/biomechanics";
-import { evaluateLift, type LiftConfig } from "@/lib/sports/lifting/lifts";
+import { evaluateLift, type LiftConfig, type LiftFinding } from "@/lib/sports/lifting/lifts";
+import {
+  evaluateSquatFront,
+  type SquatFrontReport,
+} from "@/lib/sports/lifting/squat-front";
 
 /*
  * LiftFit results, on the shared score dashboard: an overall technique score,
@@ -125,12 +129,15 @@ function RepSummary({
 export function LiftResultsSection({
   config,
   report,
+  frontReport,
   frames,
   videoUrl,
   aspect,
 }: {
   config: LiftConfig;
   report: LiftReport | null;
+  /** Optional squat front-view analysis (knee tracking, symmetry). */
+  frontReport?: SquatFrontReport | null;
   frames?: TimedFrame[];
   videoUrl?: string;
   aspect?: number;
@@ -142,13 +149,28 @@ export function LiftResultsSection({
     ? buildLiftKeyFrames(config, report, frames, verdicts)
     : undefined;
 
+  // Fold in the optional front view (squat only): its metrics score alongside
+  // the side ones, and its findings re-rank into the one-change list by
+  // priority (so a caving knee can lead if nothing sagittal is worse).
+  const front = frontReport ? evaluateSquatFront(frontReport) : null;
+  const metrics = front
+    ? [...toMetrics(verdicts), ...front.metrics]
+    : toMetrics(verdicts);
+  const allFindings: LiftFinding[] = [
+    ...(primary ? [primary] : []),
+    ...secondary,
+    ...(front ? front.findings : []),
+  ].sort((a, b) => a.priority - b.priority);
+  const mergedPrimary = allFindings[0] ?? null;
+  const mergedSecondary = allFindings.slice(1);
+
   return (
     <ScoreDashboard
       title="Form analysis"
       intro={`Your ${config.name.toLowerCase()} set, scored against sensible ranges. The key moments below trace your body line so each number has a picture. This is a measuring tool, not a spotter or a coach.`}
-      metrics={toMetrics(verdicts)}
-      primary={primary}
-      secondary={secondary}
+      metrics={metrics}
+      primary={mergedPrimary}
+      secondary={mergedSecondary}
       drillsBase="/lifting/drills"
       rabbitHoleHref="/method#lifting"
       historySport="lifting"
