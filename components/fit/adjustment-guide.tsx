@@ -22,7 +22,7 @@ import {
   SHOP_JOBS,
   type Adjustment,
   type Difficulty,
-} from "@/lib/adjustments";
+} from "@/lib/sports/cycling/drills";
 import { listSavedFits } from "@/lib/db";
 import type { BikeType } from "@/lib/engine";
 import { DISCLAIMER } from "@/lib/results-copy";

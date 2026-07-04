@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { MeasurementWizard } from "@/components/fit/measurement-wizard";
 
 export const metadata: Metadata = { title: "New fit" };
 
-export default function NewFitPage() {
+// The measurement Quick Fit is a cycling (BikeFit) tool.
+export default async function NewFitPage({
+  params,
+}: {
+  params: Promise<{ sport: string }>;
+}) {
+  const { sport } = await params;
+  if (sport !== "cycling") notFound();
   return (
     <div className="flex flex-col gap-2">
       <h1 className="sr-only">New fit</h1>

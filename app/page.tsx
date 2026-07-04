@@ -71,7 +71,7 @@ export default function HomePage() {
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6 text-sm text-ink-muted">
         <span>
           No tracking, no account required. Your data stays in this browser
-          unless you export it.
+          unless you export it. A Marshmallow Labs experiment.
         </span>
         <span className="flex items-center gap-4">
           <Link

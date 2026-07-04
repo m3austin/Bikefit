@@ -2,8 +2,8 @@ import { FitRecommendations } from "@/components/fit/fit-recommendations";
 import { FrontalReportView } from "@/components/fit/frontal-report";
 import { StrokeReportView } from "@/components/fit/stroke-report";
 import { VerdictCards } from "@/components/fit/verdict-cards";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
-import { evaluateFitRules, extractMeasuredValues } from "@/lib/fit-rules";
+import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
+import { evaluateFitRules, extractMeasuredValues } from "@/lib/sports/cycling/rules";
 
 /*
  * The Stage 3 results section: recommendations (one change at a time),

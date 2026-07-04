@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 
 import { formatDeg, formatPct } from "@/lib/format";
-import type { FrontalStrokeReport, MetricStats } from "@/lib/biomechanics";
+import type { FrontalStrokeReport, MetricStats } from "@/lib/sports/cycling/biomechanics";
 
 /*
  * Frontal-plane (straight-on view) results: knee tracking, left-right

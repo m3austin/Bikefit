@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { formatDeg, formatPct } from "@/lib/format";
-import type { MetricVerdict, Verdict } from "@/lib/fit-rules";
+import type { MetricVerdict, Verdict } from "@/lib/sports/cycling/rules";
 
 /*
  * Measured value vs target range, one card per metric, with an at-a-glance

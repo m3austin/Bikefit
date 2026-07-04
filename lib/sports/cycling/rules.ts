@@ -1,6 +1,7 @@
 /*
- * The deterministic fit rules engine (video fit analysis, Stage 3). Pure:
- * measurements in, verdicts and recommendations out. No React, no DOM.
+ * Cycling (BikeFit) fit rules: targets, measured-value extraction, verdicts,
+ * and the rule list, on top of the kernel rules engine. Moved from the
+ * original lib/fit-rules.ts; behavior is identical.
  *
  * ============================ PLACEHOLDERS ============================
  * EVERY numeric value in this file (target ranges, marginal bands, rule
@@ -12,19 +13,23 @@
  * ======================================================================
  */
 
-import type { AdjustmentId } from "@/lib/adjustments";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
+import {
+  evaluateRules,
+  verdictFor,
+  type Finding,
+  type Rule,
+  type TargetRange,
+  type Verdict,
+} from "@/lib/kernel/rules";
+import type { AdjustmentId } from "@/lib/sports/cycling/drills";
+import type {
+  FrontalStrokeReport,
+  StrokeReport,
+} from "@/lib/sports/cycling/biomechanics";
 
-export type Verdict = "in_range" | "marginal" | "out_of_range";
-export type Confidence = "high" | "medium" | "low";
-
-export type TargetRange = {
-  low: number;
-  high: number;
-  /** Marginal band width beyond [low, high] on both sides. */
-  margin: number;
-  unit: "deg" | "pct";
-};
+// Convenience re-exports so cycling consumers keep one import path.
+export { verdictFor } from "@/lib/kernel/rules";
+export type { Confidence, TargetRange, Verdict } from "@/lib/kernel/rules";
 
 /**
  * Target ranges per metric. Degrees for angles; "pct" values are percent of
@@ -51,15 +56,6 @@ export const TARGETS = {
 } as const satisfies Record<string, TargetRange>;
 
 export type TargetId = keyof typeof TARGETS;
-
-/** Band verdict: inside [low, high], inside the margin, or beyond it. */
-export function verdictFor(value: number, target: TargetRange): Verdict {
-  if (value >= target.low && value <= target.high) return "in_range";
-  if (value >= target.low - target.margin && value <= target.high + target.margin) {
-    return "marginal";
-  }
-  return "out_of_range";
-}
 
 /**
  * The flattened measurement snapshot the rules reason over. Undefined means
@@ -143,26 +139,13 @@ export function computeMetricVerdicts(v: MeasuredValues): MetricVerdict[] {
   return out;
 }
 
-export type FitRule = {
-  id: string;
-  /** Why this rule fired, in rider-facing language. */
-  description: string;
-  condition: (v: MeasuredValues) => boolean;
-  recommendation: {
-    /** The full rider-facing instruction. */
-    action: string;
-    direction: string;
-    magnitude: string;
-  };
-  /** 1 is highest. Ties resolve by array order (deterministic). */
-  priority: number;
-  confidence: Confidence;
-  /**
-   * The /adjust procedure that shows how to make this change with a wrench.
-   * Absent for recheck-style findings (re-record, in-person assessment).
-   */
+/** A cycling rule: the kernel shape with typed drill links. */
+export type FitRule = Omit<Rule<MeasuredValues>, "adjust"> & {
   adjust?: AdjustmentId;
 };
+
+/** A triggered cycling finding, with the drill link typed. */
+export type FitFinding = Omit<Finding, "adjust"> & { adjust?: AdjustmentId };
 
 /*
  * The rule set. Conditions read the PLACEHOLDER targets above; magnitudes in
@@ -384,47 +367,23 @@ export const FIT_RULES: readonly FitRule[] = [
   },
 ];
 
-/** A triggered rule, flattened for display. */
-export type FitFinding = {
-  ruleId: string;
-  description: string;
-  action: string;
-  direction: string;
-  magnitude: string;
-  priority: number;
-  confidence: Confidence;
-  /** Deep link target in the adjustment guide, when a procedure exists. */
-  adjust?: AdjustmentId;
-};
-
 /**
- * Run every rule over the measurements. "One change at a time": the single
- * highest-priority finding is the primary recommendation; the rest are
- * secondary. Deterministic: priority, then rule-array order.
+ * Run every cycling rule via the kernel engine. The casts narrow the kernel's
+ * `adjust?: string` back to AdjustmentId, which is sound because FIT_RULES is
+ * typed with AdjustmentId links.
  */
 export function evaluateFitRules(v: MeasuredValues): {
   primary: FitFinding | null;
   secondary: FitFinding[];
   verdicts: MetricVerdict[];
 } {
-  const triggered: FitFinding[] = FIT_RULES.filter((r) => r.condition(v)).map(
-    (r) => ({
-      ruleId: r.id,
-      description: r.description,
-      action: r.recommendation.action,
-      direction: r.recommendation.direction,
-      magnitude: r.recommendation.magnitude,
-      priority: r.priority,
-      confidence: r.confidence,
-      adjust: r.adjust,
-    }),
+  const { primary, secondary } = evaluateRules(
+    FIT_RULES as readonly Rule<MeasuredValues>[],
+    v,
   );
-  // Array#sort is stable, so equal priorities keep their rule-array order.
-  triggered.sort((a, b) => a.priority - b.priority);
-  const primary = triggered[0] ?? null;
   return {
-    primary,
-    secondary: triggered.slice(1),
+    primary: primary as FitFinding | null,
+    secondary: secondary as FitFinding[],
     verdicts: computeMetricVerdicts(v),
   };
 }

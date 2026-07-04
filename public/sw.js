@@ -1,17 +1,17 @@
 /*
- * BikeFit service worker (Flow 8, PRD §8): after the first load the app works
+ * SportFits service worker (Flow 8, PRD §8): after the first load the app works
  * fully offline. Strategy is stale-while-revalidate over same-origin GETs, so
  * pages, chunks, and assets are served from cache and refreshed in the
  * background. Navigations that miss fall back to a cached shell, and any
  * /fit/* navigation falls back to a cached results shell (the id is read from
  * the URL client-side).
  */
-const CACHE = "bikefit-v1";
+const CACHE = "sportfits-v1";
 // FIT_SHELL is a real render of the dynamic /fit/[id] route. Offline, it is
 // served for any /fit/* navigation; the client reads the id from the URL and
 // loads the fit from storage (Flow 8).
-const FIT_SHELL = "/fit/offline-shell";
-const PRECACHE = ["/", "/fit/new", "/fits", "/settings", "/method", FIT_SHELL];
+const FIT_SHELL = "/cycling/fit/offline-shell";
+const PRECACHE = ["/", "/cycling", "/cycling/fit/new", "/cycling/drills", "/fits", "/settings", "/method", FIT_SHELL];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -72,7 +72,13 @@ self.addEventListener("fetch", (event) => {
 
       // Offline and uncached. For navigations, fall back to a shell.
       if (req.mode === "navigate") {
-        if (url.pathname.startsWith("/fit/")) {
+        // Old BikeFit-era wizard URL: redirects need the network, so map it
+        // straight to the cached canonical wizard.
+        if (url.pathname === "/fit/new") {
+          const wizard = await cache.match("/cycling/fit/new");
+          if (wizard) return wizard;
+        }
+        if (url.pathname.startsWith("/cycling/fit/") || url.pathname.startsWith("/fit/")) {
           const shell = await cache.match(FIT_SHELL);
           if (shell) return shell;
         }

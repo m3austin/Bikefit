@@ -22,7 +22,7 @@ import { StepProgress } from "@/components/fit/step-progress";
 import { StrokeReportView } from "@/components/fit/stroke-report";
 import { UnitToggle } from "@/components/fit/unit-toggle";
 import { VideoResultsSection } from "@/components/fit/video-results";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
+import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
 
 /** Synthetic Stage 2 report so the table and states can be reviewed here. */
 const SAMPLE_REPORT: StrokeReport = {

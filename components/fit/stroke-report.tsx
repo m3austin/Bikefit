@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 
 import { formatDeg } from "@/lib/format";
-import type { MetricStats, StrokeReport } from "@/lib/biomechanics";
+import type { MetricStats, StrokeReport } from "@/lib/sports/cycling/biomechanics";
 
 /*
  * Stage 2 results: the aggregated joint-angle table. Measurements only; the

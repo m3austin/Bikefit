@@ -4,9 +4,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV = [
   { href: "/", label: "Home" },
-  { href: "/fit", label: "New fit" },
+  { href: "/cycling", label: "BikeFit" },
   { href: "/fits", label: "Saved fits" },
-  { href: "/adjust", label: "Adjust" },
+  { href: "/cycling/drills", label: "Drills" },
   { href: "/method", label: "Method" },
   { href: "/settings", label: "Settings" },
 ] as const;
@@ -24,7 +24,7 @@ export function AppHeader() {
           href="/"
           className="measurement text-lg font-semibold tracking-tight text-ink"
         >
-          Bike<span className="text-accent">Fit</span>
+          Sport<span className="text-accent">Fits</span>
         </Link>
         <nav
           aria-label="Primary"

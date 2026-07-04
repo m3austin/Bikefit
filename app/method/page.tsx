@@ -188,7 +188,7 @@ export default function MethodPage() {
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-6">
         <p className="text-sm leading-relaxed text-ink-muted">{DISCLAIMER}</p>
         <Button asChild className="self-start">
-          <Link href="/fit">Start your fit</Link>
+          <Link href="/cycling">Start your fit</Link>
         </Button>
       </section>
     </article>

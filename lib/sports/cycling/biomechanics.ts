@@ -1,145 +1,58 @@
 /*
- * Pure geometry and pose-analysis math (CLAUDE.md: video fit analysis
- * architecture rules). No React, Next, DOM, or MediaPipe runtime imports: this
- * module takes plain landmark arrays in and returns plain numbers/strings out,
- * so it is testable with synthetic fixtures alone.
+ * Cycling (BikeFit) biomechanics: sagittal joint angles, pedal-stroke
+ * segmentation, and frontal-plane knee tracking. Pure math over pose frames;
+ * no React, Next, DOM, or MediaPipe runtime. Moved from the original
+ * lib/biomechanics.ts with the generic pieces extracted to lib/kernel/*;
+ * every output is locked by the same golden tests as before.
  *
- * Contents: facing-side detection and tracking confidence (Stage 1), sagittal
- * joint angles, pedal-stroke segmentation, and aggregation (Stage 2), and
- * frontal-plane metrics from a straight-on view: lateral knee deviation,
- * left-right symmetry, and hip drop (Stage B). Function names carry `frontal`
- * when they belong to the straight-on view so the two planes stay easy to
- * tell apart.
- *
- * The constants in this file are DATA-QUALITY tunings (how clean must the
- * signal be), not fit targets; fit target ranges and recommendation rules
- * live only in lib/fit-rules.ts. They are still marked PLACEHOLDER because
- * they are unsourced engineering defaults, not validated values.
+ * The constants here are DATA-QUALITY tunings (how clean must the signal be),
+ * not fit targets; fit target ranges and recommendation rules live only in
+ * lib/sports/cycling/rules.ts. They are still marked PLACEHOLDER because they
+ * are unsourced engineering defaults, not validated values.
  */
 
+import {
+  detectCyclePeaks,
+  type CycleOptions,
+  type CyclePoint,
+} from "@/lib/kernel/cycles";
+import {
+  computeStats,
+  interiorAngleDeg,
+  torsoAngleDeg,
+  type MetricStats,
+  type Point2,
+} from "@/lib/kernel/geometry";
+import {
+  METRIC_VISIBILITY_FLOOR,
+  detectFacingSide,
+  type TimedFrame,
+} from "@/lib/kernel/tracking";
 import { SIDE_LANDMARKS, type PoseFrame, type Side } from "@/lib/pose-model";
 
-const MIN_FRAMES_FOR_SIDE_VOTE = 1;
+// Convenience re-exports so cycling consumers keep one import path for the
+// kernel utilities this module is built on.
+export {
+  computeStats,
+  interiorAngleDeg,
+  movingAverage,
+  torsoAngleDeg,
+} from "@/lib/kernel/geometry";
+export type { MetricStats, Point2 } from "@/lib/kernel/geometry";
+export {
+  METRIC_VISIBILITY_FLOOR,
+  averageFrameVisibility,
+  averageSideVisibility,
+  detectFacingSide,
+  isSustainedLowConfidence,
+} from "@/lib/kernel/tracking";
+export type {
+  ConfidenceSample,
+  SideVote,
+  TimedFrame,
+} from "@/lib/kernel/tracking";
 
-/** Visibility defaults to 1 when a landmark omits it (still image models do). */
-function visibilityOf(frame: PoseFrame, index: number): number {
-  return frame[index]?.visibility ?? 0;
-}
-
-/** Mean visibility across one side's tracked joints in a single frame. */
-export function averageSideVisibility(frame: PoseFrame, side: Side): number {
-  const indices = Object.values(SIDE_LANDMARKS[side]);
-  const total = indices.reduce((sum, i) => sum + visibilityOf(frame, i), 0);
-  return total / indices.length;
-}
-
-/** Mean landmark visibility across all tracked joints (both sides), one frame. */
-export function averageFrameVisibility(frame: PoseFrame): number {
-  const left = averageSideVisibility(frame, "left");
-  const right = averageSideVisibility(frame, "right");
-  return (left + right) / 2;
-}
-
-export type SideVote = {
-  side: Side;
-  /** 0 to 1: how much more visible the winning side was on average. */
-  confidence: number;
-  framesConsidered: number;
-};
-
-/**
- * Which side of the rider faces the camera, decided by comparing average
- * landmark visibility for the left versus right joint set across all sampled
- * frames (a rider filmed side-on occludes their far side, which MediaPipe
- * reports with lower visibility). Ties go to "right" (arbitrary but stable).
- */
-export function detectFacingSide(frames: readonly PoseFrame[]): SideVote {
-  const usable = frames.filter((f) => f.length > 0);
-  if (usable.length < MIN_FRAMES_FOR_SIDE_VOTE) {
-    return { side: "right", confidence: 0, framesConsidered: 0 };
-  }
-
-  const leftTotal = usable.reduce(
-    (sum, f) => sum + averageSideVisibility(f, "left"),
-    0,
-  );
-  const rightTotal = usable.reduce(
-    (sum, f) => sum + averageSideVisibility(f, "right"),
-    0,
-  );
-  const leftMean = leftTotal / usable.length;
-  const rightMean = rightTotal / usable.length;
-
-  const side: Side = leftMean > rightMean ? "left" : "right";
-  const winner = Math.max(leftMean, rightMean);
-  const loser = Math.min(leftMean, rightMean);
-  // Normalise the gap by the winner so confidence is 0 when both sides are
-  // equally visible and approaches 1 as the losing side disappears entirely.
-  const confidence = winner === 0 ? 0 : (winner - loser) / winner;
-
-  return { side, confidence, framesConsidered: usable.length };
-}
-
-export type ConfidenceSample = { timestampMs: number; visibility: number };
-
-/**
- * True once at least `windowSize` of the most recent samples all fall below
- * `threshold` (Stage 1's "confidence stayed low" banner trigger). Older
- * samples outside the window never count, so recovery clears the warning.
- */
-export function isSustainedLowConfidence(
-  samples: readonly ConfidenceSample[],
-  options: { windowSize: number; threshold: number },
-): boolean {
-  const { windowSize, threshold } = options;
-  if (samples.length < windowSize) return false;
-  const recent = samples.slice(-windowSize);
-  return recent.every((s) => s.visibility < threshold);
-}
-
-// --- Stage 2: joint angles ---------------------------------------------------
-
-export type Point2 = { x: number; y: number };
-
-/**
- * PLACEHOLDER: data-quality cutoff (unsourced engineering default). A joint
- * below this landmark visibility is excluded from angle math for that frame.
- */
-export const METRIC_VISIBILITY_FLOOR = 0.5;
-
-/**
- * Interior angle at vertex b of the path a-b-c, in degrees within [0, 180].
- * Returns null when either segment has zero length (the angle is undefined).
- */
-export function interiorAngleDeg(
-  a: Point2,
-  b: Point2,
-  c: Point2,
-): number | null {
-  const abX = a.x - b.x;
-  const abY = a.y - b.y;
-  const cbX = c.x - b.x;
-  const cbY = c.y - b.y;
-  const lenAb = Math.hypot(abX, abY);
-  const lenCb = Math.hypot(cbX, cbY);
-  if (lenAb === 0 || lenCb === 0) return null;
-  const cos = (abX * cbX + abY * cbY) / (lenAb * lenCb);
-  const clamped = Math.min(1, Math.max(-1, cos));
-  return (Math.acos(clamped) * 180) / Math.PI;
-}
-
-/**
- * Torso lean relative to horizontal, in degrees: 0 is a flat back parallel to
- * the ground, 90 is bolt upright. Independent of which way the rider faces.
- * Image y grows downward, so the shoulder being above the hip means
- * hip.y - shoulder.y is positive. Null when hip and shoulder coincide.
- */
-export function torsoAngleDeg(hip: Point2, shoulder: Point2): number | null {
-  const dx = Math.abs(shoulder.x - hip.x);
-  const dy = hip.y - shoulder.y;
-  if (dx === 0 && dy === 0) return null;
-  return (Math.atan2(dy, dx) * 180) / Math.PI;
-}
+// --- Sagittal (side view) joint angles ---------------------------------------
 
 /** One frame's joint angles and the positions later stages segment on. */
 export type FrameMetrics = {
@@ -196,39 +109,9 @@ export function computeFrameMetrics(
   };
 }
 
-// --- Stage 2: pedal stroke segmentation --------------------------------------
+// --- Pedal stroke segmentation ------------------------------------------------
 
-/** Centered moving average. Windows are clamped odd and to the series length. */
-export function movingAverage(
-  values: readonly number[],
-  window: number,
-): number[] {
-  if (values.length === 0) return [];
-  const half = Math.floor(Math.max(1, Math.min(window, values.length)) / 2);
-  const out: number[] = [];
-  for (let i = 0; i < values.length; i++) {
-    let sum = 0;
-    let n = 0;
-    for (let j = i - half; j <= i + half; j++) {
-      const v = values[j];
-      if (v !== undefined) {
-        sum += v;
-        n++;
-      }
-    }
-    out.push(sum / n);
-  }
-  return out;
-}
-
-export type SegmentationOptions = {
-  /** Two bottom-dead-center peaks closer than this are one pedal stroke. */
-  minSeparationMs: number;
-  /** A peak must sit this far up the ankle's min-to-max Y travel, 0 to 1. */
-  minRelativeHeight: number;
-  /** Moving-average window (samples) applied to ankle Y before peak-picking. */
-  smoothWindow: number;
-};
+export type SegmentationOptions = CycleOptions;
 
 /**
  * PLACEHOLDER: data-quality tunings (unsourced engineering defaults).
@@ -241,65 +124,31 @@ export const DEFAULT_SEGMENTATION: SegmentationOptions = {
 };
 
 /**
- * Indices (into `samples`) of bottom dead center: local maxima of ankle Y per
+ * Indices (into `samples`) of bottom dead center: one ankle-Y peak per
  * revolution (image y grows downward, so the pedal's lowest point is the
- * largest y). Peaks are smoothed, must clear a relative-height bar so the
- * back-of-stroke wiggle doesn't count, and are picked greedily by height with
- * a minimum time gap. Returned in time order.
+ * largest y). Wraps the kernel's cyclic peak detector over the frames where
+ * the ankle is visible, then maps indices back to the full sample stream.
  */
 export function detectBottomDeadCenters(
   samples: readonly TimedMetrics[],
   options: SegmentationOptions = DEFAULT_SEGMENTATION,
 ): number[] {
-  const usable: Array<{ index: number; tMs: number }> = [];
-  const rawY: number[] = [];
+  const usable: Array<{ index: number; point: CyclePoint }> = [];
   samples.forEach((s, index) => {
     if (s.metrics.anklePos) {
-      usable.push({ index, tMs: s.tMs });
-      rawY.push(s.metrics.anklePos.y);
+      usable.push({
+        index,
+        point: { tMs: s.tMs, value: s.metrics.anklePos.y },
+      });
     }
   });
-  if (usable.length < 3) return [];
-
-  const ys = movingAverage(rawY, options.smoothWindow);
-  let min = Infinity;
-  let max = -Infinity;
-  for (const y of ys) {
-    if (y < min) min = y;
-    if (y > max) max = y;
-  }
-  if (max - min < 1e-9) return [];
-  const bar = min + options.minRelativeHeight * (max - min);
-
-  const candidates: number[] = [];
-  for (let i = 1; i < ys.length - 1; i++) {
-    const prev = ys[i - 1];
-    const here = ys[i];
-    const next = ys[i + 1];
-    if (prev === undefined || here === undefined || next === undefined) continue;
-    if (here < bar) continue;
-    // >= on the left, > on the right: a flat-topped peak counts once.
-    if (here >= prev && here > next) candidates.push(i);
-  }
-
-  // Greedy by height, keeping only peaks far enough (in time) from the ones
-  // already accepted, so noise riding on a real peak can't double-count it.
-  candidates.sort((a, b) => (ys[b] ?? 0) - (ys[a] ?? 0));
-  const accepted: number[] = [];
-  for (const c of candidates) {
-    const tc = usable[c]?.tMs;
-    if (tc === undefined) continue;
-    const clear = accepted.every((a) => {
-      const ta = usable[a]?.tMs;
-      return ta === undefined || Math.abs(ta - tc) >= options.minSeparationMs;
-    });
-    if (clear) accepted.push(c);
-  }
-  accepted.sort((a, b) => a - b);
-
+  const peaks = detectCyclePeaks(
+    usable.map((u) => u.point),
+    options,
+  );
   const result: number[] = [];
-  for (const a of accepted) {
-    const u = usable[a];
+  for (const p of peaks) {
+    const u = usable[p];
     if (u) result.push(u.index);
   }
   return result;
@@ -378,34 +227,7 @@ export function segmentStrokes(
   return { bdcIndices, strokes, forwardSign };
 }
 
-// --- Stage 2: aggregation -----------------------------------------------------
-
-export type MetricStats = {
-  min: number;
-  max: number;
-  mean: number;
-  /** Sample standard deviation (n - 1); 0 when only one value. */
-  stdDev: number;
-  count: number;
-};
-
-/** Basic stats over a series. Null for an empty series. */
-export function computeStats(values: readonly number[]): MetricStats | null {
-  if (values.length === 0) return null;
-  let min = Infinity;
-  let max = -Infinity;
-  let sum = 0;
-  for (const v of values) {
-    if (v < min) min = v;
-    if (v > max) max = v;
-    sum += v;
-  }
-  const mean = sum / values.length;
-  let sq = 0;
-  for (const v of values) sq += (v - mean) * (v - mean);
-  const stdDev = values.length > 1 ? Math.sqrt(sq / (values.length - 1)) : 0;
-  return { min, max, mean, stdDev, count: values.length };
-}
+// --- Sagittal aggregation -------------------------------------------------------
 
 /**
  * PLACEHOLDER: data-quality cutoffs (unsourced engineering defaults). A
@@ -414,8 +236,6 @@ export function computeStats(values: readonly number[]): MetricStats | null {
  */
 export const HIGH_VARIANCE_KNEE_STDDEV_DEG = 5;
 export const MIN_STROKES_FOR_REPORT = 2;
-
-export type TimedFrame = { tMs: number; frame: PoseFrame };
 
 export type StrokeReport = {
   side: Side;
@@ -441,7 +261,7 @@ export type StrokeReport = {
 };
 
 /**
- * The whole Stage 2 pipeline over a recorded pass: pick the facing side from
+ * The whole sagittal pipeline over a recorded pass: pick the facing side from
  * the footage itself, compute per-frame angles (aspect-corrected), segment
  * pedal strokes, and aggregate. Knee angle is read once per stroke at BDC
  * (that is the fit-relevant instant); hip, elbow, and torso are aggregated
@@ -528,7 +348,7 @@ export function buildStrokeReport(
   };
 }
 
-// --- Stage B: frontal plane (straight-on view) --------------------------------
+// --- Frontal plane (straight-on view) ------------------------------------------
 
 /**
  * Signed lateral offset of the knee from the hip-ankle line, measured at the

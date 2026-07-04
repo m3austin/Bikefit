@@ -201,7 +201,7 @@ export function MeasurementWizard() {
         saved: false,
       });
       await clearActiveDraft();
-      const target = `/fit/${id}?reveal=1`;
+      const target = `/cycling/fit/${id}?reveal=1`;
       // Offline, a soft navigation would need an uncached RSC fetch. A hard
       // navigation lets the service worker serve the cached /fit/* shell, which
       // reads the id from the URL and loads the fit from storage (Flow 8).

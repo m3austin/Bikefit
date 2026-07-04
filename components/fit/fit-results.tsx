@@ -64,7 +64,7 @@ export function FitResults() {
         setAnimate(reveal && !reduced);
         setLoadState("found");
         // Strip ?reveal so a refresh or shared link does not replay the reveal.
-        if (reveal) window.history.replaceState(null, "", `/fit/${id}`);
+        if (reveal) window.history.replaceState(null, "", `/cycling/fit/${id}`);
       } else {
         setLoadState("notfound");
       }
@@ -100,7 +100,7 @@ export function FitResults() {
     if (fit && !fit.saved) {
       await deleteFit(id);
     }
-    router.push("/fit/new");
+    router.push("/cycling/fit/new");
   }, [fit, id, router]);
 
   if (loadState === "loading") {
@@ -255,7 +255,7 @@ function ResultsNotFound() {
       </p>
       <div className="flex flex-wrap gap-3">
         <Button asChild>
-          <Link href="/fit/new">Start a new fit</Link>
+          <Link href="/cycling/fit/new">Start a new fit</Link>
         </Button>
         <Button asChild variant="outline">
           <Link href="/fits">Saved fits</Link>

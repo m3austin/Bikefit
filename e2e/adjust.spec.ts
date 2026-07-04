@@ -103,9 +103,9 @@ test("fit results deep-link into the matching procedure", async ({ page }) => {
   await page.getByRole("heading", { name: "Saddle height" }).waitFor();
 
   const link = page.getByRole("link", { name: /How do I do this/ }).first();
-  await expect(link).toHaveAttribute("href", "/adjust#saddle-height");
+  await expect(link).toHaveAttribute("href", "/cycling/drills#saddle-height");
   await link.click();
-  await expect(page).toHaveURL(/\/adjust#saddle-height$/);
+  await expect(page).toHaveURL(/\/cycling\/drills#saddle-height$/);
   await expect(
     page.getByRole("heading", { name: "Saddle height", exact: true }),
   ).toBeInViewport();

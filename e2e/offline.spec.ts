@@ -26,8 +26,9 @@ test("airplane-mode wizard to results works after first load", async ({
 
   await context.setOffline(true);
 
-  // Do a full wizard to results while offline.
-  await page.goto("/fit/new");
+  // Do a full wizard to results while offline (canonical route; the old
+  // /fit/new also works via the service worker's offline mapping).
+  await page.goto("/cycling/fit/new");
   await page.getByRole("radio", { name: /Gravel/ }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "Continue" }).click();

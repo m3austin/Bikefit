@@ -49,7 +49,7 @@ export function LandingHero() {
       <WelcomeBack
         fits={fits}
         unit={unit}
-        onOpen={(id) => router.push(`/fit/${id}`)}
+        onOpen={(id) => router.push(`/cycling/fit/${id}`)}
       />
     );
   }
@@ -71,7 +71,7 @@ function Hero() {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild size="lg">
-          <Link href="/fit">
+          <Link href="/cycling">
             Start your fit
             <ArrowRight />
           </Link>
@@ -121,7 +121,7 @@ function WelcomeBack({
 
       <div className="flex flex-wrap items-center gap-3">
         <Button asChild>
-          <Link href="/fit">
+          <Link href="/cycling">
             New fit
             <ArrowRight />
           </Link>

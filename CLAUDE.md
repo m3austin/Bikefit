@@ -1,6 +1,38 @@
-# BikeFit - rules for every Claude Code session
+# SportFits - rules for every Claude Code session
 
-BikeFit is a free, local-first web app giving everyday cyclists a professional-quality starting bike fit from body measurements. Read these docs before building anything:
+SportFits (by Marshmallow Labs) is a free, local-first, multi-sport video
+technique-analysis platform. Each sport is a branded module (BikeFit, GolfFit,
+RunFit, LiftFit, SwimFit) plugged into a shared analysis kernel. The platform
+brief lives in `docs/sportfit/` (00-Vision through 05-Build-Plan); read it for
+any platform-level work. The original BikeFit docs below still govern the
+cycling module and the kernel's UX bones.
+
+## Platform rules (kernel + modules)
+
+- **The kernel is sport-agnostic.** `lib/kernel/*` (geometry, tracking, cycles,
+  rules engine) and `lib/pose-model.ts` / `lib/pose-landmarker.ts` never import
+  from a sport. Generic math changes need kernel tests; sport behavior changes
+  never belong in the kernel.
+- **A sport is a module.** `lib/sports/<slug>/*` holds its biomechanics, rules
+  (PLACEHOLDER targets), drills, and copy; `lib/sports/registry.ts` is the one
+  list the hub, routes, and future directory read. Adding a sport = a module
+  folder + one registry entry. Routes live under `app/[sport]/*`; unknown or
+  coming-soon slugs 404 in the segment layout.
+- **BikeFit-era URLs are contractual.** `/fit/*` and `/adjust` redirect to
+  `/cycling/*` (next.config) and the service worker maps them offline. Never
+  break them; the Play deep link uses them.
+- **Voice is three registers** (docs/sportfit/04): playful in chrome, plain-
+  precise in instructions and numbers, dead-serious on safety (heaviest on
+  lifting). Humor never rides into a rep, a result, or a disclaimer.
+- **Monetization is deferred by decision** (docs/sportfit/05 appendix): no coach
+  directory, assessments, badges, or subscriptions get built until the owner
+  calls it, and all such surfaces must hide in the Play wrapper (?src=play).
+- **Marshmallow Labs is the publisher brand**: footer signature and mascot
+  easter eggs only, never on safety, results, or payment surfaces.
+
+# BikeFit (cycling module) - original rules, still in force
+
+BikeFit is the cycling module: a free, local-first experience giving everyday cyclists a professional-quality starting bike fit from body measurements. Read these docs before building anything:
 
 - `docs/PRD.md` wins on scope, features, and fit-method facts (formulas, ranges, modifiers).
 - `docs/UX-UI-Design.md` wins on all UI, design, component, and accessibility decisions.

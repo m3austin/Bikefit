@@ -34,10 +34,10 @@ const routes = [
   "/method",
   "/fits",
   "/settings",
-  "/fit",
-  "/fit/new",
-  "/fit/video",
-  "/adjust",
+  "/cycling",
+  "/cycling/fit/new",
+  "/cycling/video",
+  "/cycling/drills",
   "/privacy",
 ];
 

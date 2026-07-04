@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Download, Heart, TriangleAlert, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -305,12 +306,12 @@ export function SettingsView() {
         <p className="text-sm text-ink-muted">
           BikeFit is free and local-first. Your measurements never leave this
           device unless you opt into sync. The details live in the{" "}
-          <a
+          <Link
             href="/privacy"
             className="text-accent underline underline-offset-2"
           >
             privacy policy
-          </a>
+          </Link>
           .
         </p>
         <p className="measurement text-sm text-ink-muted">

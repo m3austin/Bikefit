@@ -13,14 +13,14 @@ const MODES: Array<{
   meta: string;
 }> = [
   {
-    href: "/fit/new",
+    href: "/cycling/fit/new",
     icon: Ruler,
     title: "Quick Fit",
     body: "Answer a few questions and measure with a tape and a book. About ten minutes, works everywhere.",
     meta: "No camera needed",
   },
   {
-    href: "/fit/video",
+    href: "/cycling/video",
     icon: Video,
     title: "Video Fit Analysis",
     body: "Record yourself pedaling on a trainer and get joint-angle measurements from the side. Add an optional straight-on video for knee tracking and left-right symmetry.",
@@ -32,6 +32,9 @@ export function FitModeChoice() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
+        <p className="measurement text-sm font-medium uppercase tracking-wide text-accent">
+          BikeFit
+        </p>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
           How do you want to fit your bike?
         </h1>

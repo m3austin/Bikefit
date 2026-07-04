@@ -22,30 +22,30 @@ const SITE_URL =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000");
 const DESCRIPTION =
-  "A free, local-first starting bike fit from your body measurements. No account, no ads, nothing to install.";
+  "Free, private video technique analysis for the sports you love, starting with cycling. No account, no ads, nothing to install.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "BikeFit, a free starting bike fit from your measurements",
-    template: "%s | BikeFit",
+    default: "SportFits, free technique analysis for your sport",
+    template: "%s | SportFits",
   },
   description: DESCRIPTION,
-  applicationName: "BikeFit",
+  applicationName: "SportFits",
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",
   },
   openGraph: {
     type: "website",
-    siteName: "BikeFit",
-    title: "BikeFit, a free starting bike fit from your measurements",
+    siteName: "SportFits",
+    title: "SportFits, free technique analysis for your sport",
     description: DESCRIPTION,
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "BikeFit",
+    title: "SportFits",
     description: DESCRIPTION,
   },
 };

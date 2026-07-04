@@ -10,7 +10,7 @@ import { VideoDropzone } from "@/components/fit/video-dropzone";
 import { VideoResultsSection } from "@/components/fit/video-results";
 import { VideoUpload } from "@/components/fit/video-upload";
 import { VideoWorkspace } from "@/components/fit/video-workspace";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
+import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
 
 /*
  * Top-level state machine for Video Fit Analysis: a required side-view video,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { ADJUSTMENTS } from "@/lib/adjustments";
-import type { FrontalStrokeReport, StrokeReport } from "@/lib/biomechanics";
+import { ADJUSTMENTS } from "@/lib/sports/cycling/drills";
+import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
 import {
   FIT_RULES,
   TARGETS,
@@ -10,7 +10,7 @@ import {
   extractMeasuredValues,
   verdictFor,
   type MeasuredValues,
-} from "@/lib/fit-rules";
+} from "@/lib/sports/cycling/rules";
 
 /*
  * The engine's SHAPE is under test here, not the numbers: every numeric

@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, Wrench } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Confidence, FitFinding } from "@/lib/fit-rules";
+import type { Confidence, FitFinding } from "@/lib/sports/cycling/rules";
 
 /*
  * "One change at a time" (Stage 3): the single highest-priority finding is
@@ -75,7 +75,7 @@ export function FitRecommendations({
         </p>
         {primary.adjust ? (
           <Button asChild variant="outline" size="sm" className="self-start">
-            <Link href={`/adjust#${primary.adjust}`}>
+            <Link href={`/cycling/drills#${primary.adjust}`}>
               <Wrench />
               How do I do this?
             </Link>
@@ -110,7 +110,7 @@ export function FitRecommendations({
                   </span>
                   {finding.adjust ? (
                     <Link
-                      href={`/adjust#${finding.adjust}`}
+                      href={`/cycling/drills#${finding.adjust}`}
                       className="inline-flex items-center gap-1 self-start text-sm text-accent underline-offset-2 hover:underline"
                     >
                       Step-by-step guide

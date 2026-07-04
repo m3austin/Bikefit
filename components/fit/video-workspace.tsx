@@ -22,7 +22,7 @@ import {
   type FrontalStrokeReport,
   type StrokeReport,
   type TimedFrame,
-} from "@/lib/biomechanics";
+} from "@/lib/sports/cycling/biomechanics";
 import {
   createPoseLandmarker,
   type PoseLandmarkerHandle,

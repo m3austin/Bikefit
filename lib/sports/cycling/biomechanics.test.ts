@@ -20,7 +20,7 @@ import {
   torsoAngleDeg,
   type TimedFrame,
   type TimedMetrics,
-} from "@/lib/biomechanics";
+} from "@/lib/sports/cycling/biomechanics";
 import { LANDMARK, type PoseFrame } from "@/lib/pose-model";
 
 /** A 33-landmark frame with every joint at a fixed visibility, unless overridden. */

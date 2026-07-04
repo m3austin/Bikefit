@@ -38,11 +38,11 @@ test("mode choice links to Quick Fit and Video Fit Analysis", async ({ page }) =
   await page.goto("/fit");
   await expect(page.getByRole("link", { name: /Quick Fit/ })).toHaveAttribute(
     "href",
-    "/fit/new",
+    "/cycling/fit/new",
   );
   await expect(
     page.getByRole("link", { name: /Video Fit Analysis/ }),
-  ).toHaveAttribute("href", "/fit/video");
+  ).toHaveAttribute("href", "/cycling/video");
 
   expect(errors).toEqual([]);
 });

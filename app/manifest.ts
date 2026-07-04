@@ -8,10 +8,10 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "BikeFit",
-    short_name: "BikeFit",
+    name: "SportFits",
+    short_name: "SportFits",
     description:
-      "A free, local-first starting bike fit from your body measurements.",
+      "Free, private video technique analysis for the sports you love.",
     start_url: "/",
     display: "standalone",
     background_color: "#0b0f14",

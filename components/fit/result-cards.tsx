@@ -81,7 +81,7 @@ export function ResultCards({
         <FitCard
           title="Saddle height"
           emphasis
-          adjustHref="/adjust#saddle-height"
+          adjustHref="/cycling/drills#saddle-height"
           applySteps={copy.saddleHeight.applySteps}
           troubleshooting={copy.saddleHeight.troubleshooting}
           method={copy.saddleHeight.method}
@@ -105,7 +105,7 @@ export function ResultCards({
               Saddle <GlossaryTerm id="setback" />
             </>
           }
-          adjustHref="/adjust#saddle-setback"
+          adjustHref="/cycling/drills#saddle-setback"
           applySteps={copy.setback.applySteps}
           troubleshooting={copy.setback.troubleshooting}
           method={copy.setback.method}
@@ -130,7 +130,7 @@ export function ResultCards({
                 Handlebar <GlossaryTerm id="bar-drop">drop</GlossaryTerm>
               </>
             }
-            adjustHref="/adjust#bar-height"
+            adjustHref="/cycling/drills#bar-height"
             applySteps={copy.barDrop.applySteps}
             troubleshooting={copy.barDrop.troubleshooting}
             method={copy.barDrop.method}
@@ -174,7 +174,7 @@ export function ResultCards({
       <RevealItem index={next()} animate={animate}>
         <FitCard
           title="Reach"
-          adjustHref="/adjust#reach"
+          adjustHref="/cycling/drills#reach"
           applySteps={copy.reach.applySteps}
           troubleshooting={copy.reach.troubleshooting}
           method={copy.reach.method}
@@ -211,7 +211,7 @@ export function ResultCards({
         <RevealItem index={next()} animate={animate}>
           <FitCard
             title="Cleat position"
-            adjustHref="/adjust#cleats"
+            adjustHref="/cycling/drills#cleats"
             applySteps={copy.cleat.applySteps}
             troubleshooting={copy.cleat.troubleshooting}
           >

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ADJUSTMENTS, SHOP_JOBS, getAdjustment } from "@/lib/adjustments";
+import { ADJUSTMENTS, SHOP_JOBS, getAdjustment } from "@/lib/sports/cycling/drills";
 import { GLOSSARY, glossaryEntry, type GlossaryId } from "@/lib/glossary";
 
 /*
