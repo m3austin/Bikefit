@@ -1,6 +1,10 @@
-import { FitRecommendations } from "@/components/fit/fit-recommendations";
-import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
-import { formatRatio } from "@/lib/format";
+import { ScoreDashboard } from "@/components/kernel/score-dashboard";
+import { formatDeg, formatRatio } from "@/lib/format";
+import type { MetricInput } from "@/lib/kernel/dashboard";
+import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
+import { toneForVerdict } from "@/lib/kernel/scoring";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import { LANDMARK } from "@/lib/pose-model";
 import type { SwingReport } from "@/lib/sports/golf/biomechanics";
 import {
   evaluateGolfRules,
@@ -9,9 +13,10 @@ import {
 } from "@/lib/sports/golf/rules";
 
 /*
- * GolfFit results: one change at a time (kernel recommendations), verdict
- * cards, a per-view phase summary, the 2D-proxy honesty note, and the
- * disclaimer. Pure presentation over the golf rules engine.
+ * GolfFit results, on the shared score dashboard: an overall technique score,
+ * per-category sub-scores, the key-frame stick-figure filmstrip, what is
+ * looking good, and the one change to try. The swing-timeline table and the
+ * 2D-proxy honesty note stay as dashboard children.
  */
 
 const VERDICT_LABELS: Record<
@@ -45,7 +50,7 @@ const VERDICT_LABELS: Record<
   },
 };
 
-function toItems(verdicts: GolfMetricVerdict[]): VerdictItem[] {
+function toMetrics(verdicts: GolfMetricVerdict[]): MetricInput[] {
   return verdicts.map((v) => ({
     key: v.id,
     label: VERDICT_LABELS[v.id].label,
@@ -92,41 +97,109 @@ function PhaseSummary({ report, title }: { report: SwingReport; title: string })
   );
 }
 
+/** Address, top, and impact from the down-the-line view, with the spine
+ * segment traced. DTL is where posture reads best; the face view drives the
+ * turn numbers but is a weaker still. */
+function buildGolfKeyFrames(
+  report: SwingReport,
+  frames: readonly TimedFrame[],
+  spineTone: ReturnType<typeof toneForVerdict>,
+): KeyFrameSpec[] {
+  const p = report.phases;
+  const spine = [LANDMARK.LEFT_SHOULDER, LANDMARK.LEFT_HIP];
+  const moments: Array<{ tMs: number; label: string; caption: string; value: string }> = [
+    {
+      tMs: p.addressTMs,
+      label: "Address",
+      caption: "Your setup posture, the angle everything else is measured against.",
+      value:
+        report.spineAtAddressDeg === null
+          ? "n/a"
+          : formatDeg(report.spineAtAddressDeg),
+    },
+    {
+      tMs: p.topTMs,
+      label: "Top of backswing",
+      caption: "The turn is loaded here; ideally your spine tilt has held.",
+      value: "held",
+    },
+    {
+      tMs: p.impactTMs,
+      label: "Impact",
+      caption: "Where the club meets the ball, and where posture pays off.",
+      value:
+        report.spineChangeDeg === null
+          ? "n/a"
+          : `Δ ${formatDeg(report.spineChangeDeg)}`,
+    },
+  ];
+  const specs: KeyFrameSpec[] = [];
+  for (const m of moments) {
+    const landmarks = poseAt(frames, m.tMs);
+    if (!landmarks) continue;
+    specs.push({
+      tMs: m.tMs,
+      label: m.label,
+      caption: m.caption,
+      landmarks,
+      highlights: [
+        { label: "Spine", valueText: m.value, points: spine, tone: spineTone },
+      ],
+    });
+  }
+  return specs;
+}
+
 export function GolfResultsSection({
   dtlReport,
   faceReport,
+  dtlFrames,
+  faceFrames,
+  dtlUrl,
+  faceUrl,
+  aspect,
 }: {
   dtlReport: SwingReport | null;
   faceReport: SwingReport | null;
+  dtlFrames?: TimedFrame[];
+  faceFrames?: TimedFrame[];
+  dtlUrl?: string;
+  faceUrl?: string;
+  aspect?: number;
 }) {
   if (!dtlReport && !faceReport) return null;
 
   const values = extractMeasuredSwing(dtlReport, faceReport);
   const { primary, secondary, verdicts } = evaluateGolfRules(values);
 
+  // Key frames come from the down-the-line view when present (best for
+  // posture), else the face-on view.
+  const spineTone = toneForVerdict(
+    verdicts.find((v) => v.id === "spineChange")?.verdict ?? "in_range",
+  );
+  let keyFrames: KeyFrameSpec[] | undefined;
+  let videoUrl: string | undefined;
+  if (dtlReport && dtlFrames && dtlUrl) {
+    keyFrames = buildGolfKeyFrames(dtlReport, dtlFrames, spineTone);
+    videoUrl = dtlUrl;
+  } else if (faceReport && faceFrames && faceUrl) {
+    keyFrames = buildGolfKeyFrames(faceReport, faceFrames, spineTone);
+    videoUrl = faceUrl;
+  }
+
   return (
-    <section className="flex flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-ink">Swing analysis</h2>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          Measurements from your video, checked against target ranges. The
-          key moments are marked on the timeline above, so you can jump
-          straight to your top or impact and see it with your own eyes.
-        </p>
-      </div>
-
-      <FitRecommendations
-        primary={primary}
-        secondary={secondary}
-        drillsBase="/golf/drills"
-        allClearNote="No change to make from these numbers. Go play, and let your strikes have the final say."
-      />
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards items={toItems(verdicts)} />
-      </div>
-
+    <ScoreDashboard
+      title="Swing analysis"
+      intro="Your swing, scored against sensible ranges. The key moments below are pulled from your video with the measured angles drawn on, so every number has a picture."
+      metrics={toMetrics(verdicts)}
+      primary={primary}
+      secondary={secondary}
+      drillsBase="/golf/drills"
+      allClearNote="No change to make from these numbers. Go play, and let your strikes have the final say."
+      keyFrames={keyFrames}
+      videoUrl={videoUrl}
+      aspect={aspect}
+    >
       <div className="flex flex-col gap-4">
         <h3 className="text-lg font-semibold text-ink">Swing timeline</h3>
         {dtlReport ? (
@@ -156,6 +229,6 @@ export function GolfResultsSection({
         lesson or medical advice. Change one thing at a time, and if anything
         hurts, stop and see a coach or a physician.
       </p>
-    </section>
+    </ScoreDashboard>
   );
 }

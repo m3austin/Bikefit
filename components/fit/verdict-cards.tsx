@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { formatDeg, formatPct, formatRatio, formatSpm } from "@/lib/format";
+import { formatByUnit } from "@/lib/format";
 import type { TargetRange, Verdict } from "@/lib/kernel/rules";
 
 /*
@@ -39,10 +39,7 @@ function verdictClasses(verdict: Verdict): { pill: string; dot: string } {
 }
 
 function formatFor(target: TargetRange): (value: number) => string {
-  if (target.unit === "deg") return formatDeg;
-  if (target.unit === "pct") return formatPct;
-  if (target.unit === "spm") return formatSpm;
-  return formatRatio;
+  return (value: number) => formatByUnit(value, target.unit);
 }
 
 function TargetBand({ item }: { item: VerdictItem }) {

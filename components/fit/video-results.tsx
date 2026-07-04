@@ -1,7 +1,12 @@
-import { FitRecommendations } from "@/components/fit/fit-recommendations";
 import { FrontalReportView } from "@/components/fit/frontal-report";
 import { StrokeReportView } from "@/components/fit/stroke-report";
-import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
+import { ScoreDashboard } from "@/components/kernel/score-dashboard";
+import { formatDeg } from "@/lib/format";
+import type { MetricInput } from "@/lib/kernel/dashboard";
+import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
+import { toneForVerdict } from "@/lib/kernel/scoring";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import { SIDE_LANDMARKS } from "@/lib/pose-model";
 import type { FrontalStrokeReport, StrokeReport } from "@/lib/sports/cycling/biomechanics";
 import {
   evaluateFitRules,
@@ -34,7 +39,7 @@ const VERDICT_LABELS: Record<MetricVerdict["id"], { label: string; hint: string 
   },
 };
 
-function toItems(verdicts: MetricVerdict[]): VerdictItem[] {
+function toMetrics(verdicts: MetricVerdict[]): MetricInput[] {
   return verdicts.map((v) => ({
     key: v.id,
     label: VERDICT_LABELS[v.id].label,
@@ -43,6 +48,42 @@ function toItems(verdicts: MetricVerdict[]): VerdictItem[] {
     target: v.target,
     verdict: v.verdict,
   }));
+}
+
+/** Up to three stroke-bottom frames from the side view, knee traced. */
+function buildCyclingKeyFrames(
+  report: StrokeReport,
+  frames: readonly TimedFrame[],
+  verdicts: MetricVerdict[],
+): KeyFrameSpec[] {
+  const ids = SIDE_LANDMARKS[report.side];
+  const kneeTone = toneForVerdict(
+    verdicts.find((v) => v.id === "kneeAtBdc")?.verdict ?? "in_range",
+  );
+  const kneeText =
+    report.stats.kneeAtBdc === null
+      ? "n/a"
+      : formatDeg(report.stats.kneeAtBdc.mean);
+  const specs: KeyFrameSpec[] = [];
+  report.bdcTMs.slice(0, 3).forEach((tMs, i) => {
+    const landmarks = poseAt(frames, tMs);
+    if (!landmarks) return;
+    specs.push({
+      tMs,
+      label: `Stroke bottom ${i + 1}`,
+      caption: "Bottom dead center, where saddle height shows in your knee.",
+      landmarks,
+      highlights: [
+        {
+          label: "Knee",
+          valueText: kneeText,
+          points: [ids.hip, ids.knee, ids.ankle],
+          tone: kneeTone,
+        },
+      ],
+    });
+  });
+  return specs;
 }
 
 /*
@@ -62,41 +103,39 @@ const RETEST_STEPS = [
 export function VideoResultsSection({
   sideReport,
   frontalReport,
+  sideFrames,
+  sideUrl,
+  aspect,
 }: {
   sideReport: StrokeReport | null;
   frontalReport: FrontalStrokeReport | null;
+  sideFrames?: TimedFrame[];
+  sideUrl?: string;
+  aspect?: number;
 }) {
   if (!sideReport && !frontalReport) return null;
 
   const values = extractMeasuredValues(sideReport, frontalReport);
   const { primary, secondary, verdicts } = evaluateFitRules(values);
+  const keyFrames =
+    sideReport && sideFrames
+      ? buildCyclingKeyFrames(sideReport, sideFrames, verdicts)
+      : undefined;
 
   return (
-    <section className="flex flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-ink">
-          {sideReport && frontalReport
-            ? "Complete Fit Analysis"
-            : "Fit analysis"}
-        </h2>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          {sideReport && frontalReport
-            ? "Measurements from both camera views, checked against target ranges."
-            : "Measurements from your video, checked against target ranges."}
-        </p>
-      </div>
-
-      <FitRecommendations
-        primary={primary}
-        secondary={secondary}
-        drillsBase="/cycling/drills"
-      />
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards items={toItems(verdicts)} />
-      </div>
-
+    <ScoreDashboard
+      title={
+        sideReport && frontalReport ? "Complete fit analysis" : "Fit analysis"
+      }
+      intro="Your fit, scored against sensible ranges. The stroke-bottom frames below trace your knee, the angle saddle height lives in, so every number has a picture."
+      metrics={toMetrics(verdicts)}
+      primary={primary}
+      secondary={secondary}
+      drillsBase="/cycling/drills"
+      keyFrames={keyFrames}
+      videoUrl={sideUrl}
+      aspect={aspect}
+    >
       {sideReport ? (
         <StrokeReportView report={sideReport} />
       ) : (
@@ -135,6 +174,6 @@ export function VideoResultsSection({
         If pain persists or gets worse, stop and see a professional bike
         fitter or a physician.
       </p>
-    </section>
+    </ScoreDashboard>
   );
 }

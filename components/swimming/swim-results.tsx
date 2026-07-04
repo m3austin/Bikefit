@@ -1,6 +1,10 @@
-import { FitRecommendations } from "@/components/fit/fit-recommendations";
-import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
-import { formatSpm } from "@/lib/format";
+import { ScoreDashboard } from "@/components/kernel/score-dashboard";
+import { formatPct } from "@/lib/format";
+import type { MetricInput } from "@/lib/kernel/dashboard";
+import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
+import { toneForVerdict } from "@/lib/kernel/scoring";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import { SIDE_LANDMARKS } from "@/lib/pose-model";
 import type { SwimReport } from "@/lib/sports/swimming/biomechanics";
 import {
   evaluateSwimRules,
@@ -33,7 +37,7 @@ const VERDICT_LABELS: Record<
   },
 };
 
-function toItems(verdicts: SwimMetricVerdict[]): VerdictItem[] {
+function toMetrics(verdicts: SwimMetricVerdict[]): MetricInput[] {
   return verdicts.map((v) => ({
     key: v.id,
     label: VERDICT_LABELS[v.id].label,
@@ -42,6 +46,55 @@ function toItems(verdicts: SwimMetricVerdict[]): VerdictItem[] {
     target: v.target,
     verdict: v.verdict,
   }));
+}
+
+/** The catch and the recovery apex, with the near arm traced. */
+function buildSwimKeyFrames(
+  report: SwimReport,
+  frames: readonly TimedFrame[],
+  verdicts: SwimMetricVerdict[],
+): KeyFrameSpec[] {
+  const ids = SIDE_LANDMARKS[report.side];
+  const arm = [ids.shoulder, ids.elbow, ids.wrist];
+  const elbowTone = toneForVerdict(
+    verdicts.find((v) => v.id === "elbowRecovery")?.verdict ?? "in_range",
+  );
+  const elbowText =
+    report.elbowRecoveryPct === null
+      ? "n/a"
+      : formatPct(report.elbowRecoveryPct.mean);
+  const catchT = report.catchTMs[0];
+  const recoveryT = report.recoveryTMs[0];
+  const specs: KeyFrameSpec[] = [];
+  if (catchT !== undefined) {
+    const landmarks = poseAt(frames, catchT);
+    if (landmarks) {
+      specs.push({
+        tMs: catchT,
+        label: "Catch",
+        caption: "The hand enters and starts to grab water out front.",
+        landmarks,
+        highlights: [
+          { label: "Arm", valueText: "catch", points: arm, tone: "great" },
+        ],
+      });
+    }
+  }
+  if (recoveryT !== undefined) {
+    const landmarks = poseAt(frames, recoveryT);
+    if (landmarks) {
+      specs.push({
+        tMs: recoveryT,
+        label: "Recovery",
+        caption: "The arm swings forward over the water; a high elbow leads.",
+        landmarks,
+        highlights: [
+          { label: "Elbow", valueText: elbowText, points: arm, tone: elbowTone },
+        ],
+      });
+    }
+  }
+  return specs;
 }
 
 function ConfidenceLead({ report }: { report: SwimReport }) {
@@ -76,51 +129,39 @@ function ConfidenceLead({ report }: { report: SwimReport }) {
   );
 }
 
-export function SwimResultsSection({ report }: { report: SwimReport | null }) {
+export function SwimResultsSection({
+  report,
+  frames,
+  videoUrl,
+  aspect,
+}: {
+  report: SwimReport | null;
+  frames?: TimedFrame[];
+  videoUrl?: string;
+  aspect?: number;
+}) {
   if (!report) return null;
 
   const values = extractMeasuredSwim(report);
   const { primary, secondary, verdicts } = evaluateSwimRules(values);
+  const keyFrames = frames
+    ? buildSwimKeyFrames(report, frames, verdicts)
+    : undefined;
 
   return (
-    <section className="flex flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-ink">Stroke analysis</h2>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          Measurements from your video, checked against target ranges. Your
-          catches are marked on the timeline above. Read the confidence first:
-          on a swim clip it decides how much the rest is worth.
-        </p>
-      </div>
-
-      <ConfidenceLead report={report} />
-
-      {report.strokeRateSpm !== null ? (
-        <div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-6">
-          <p className="text-sm text-ink-muted">Your stroke rate</p>
-          <p className="measurement text-4xl font-semibold text-ink">
-            {formatSpm(report.strokeRateSpm)}
-          </p>
-          <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-            Total strokes per minute, counting both arms, from your near-arm
-            cadence. The most reliable number on a swim clip, and a personal,
-            pace-dependent one: sprinters turn over faster on purpose.
-          </p>
-        </div>
-      ) : null}
-
-      <FitRecommendations
-        primary={primary}
-        secondary={secondary}
-        drillsBase="/swimming/drills"
-        allClearNote="No change to make from these numbers. Swim, and remember these readings are rough by nature."
-      />
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards items={toItems(verdicts)} />
-      </div>
-
+    <ScoreDashboard
+      title="Stroke analysis"
+      intro="Your front crawl, scored against sensible ranges. Read the confidence first: on a swim clip it decides how much the rest is worth. The key moments below trace your near arm."
+      metrics={toMetrics(verdicts)}
+      primary={primary}
+      secondary={secondary}
+      drillsBase="/swimming/drills"
+      allClearNote="No change to make from these numbers. Swim, and remember these readings are rough by nature."
+      keyFrames={keyFrames}
+      videoUrl={videoUrl}
+      aspect={aspect}
+      banners={<ConfidenceLead report={report} />}
+    >
       <div
         role="note"
         aria-label="About these numbers"
@@ -142,6 +183,6 @@ export function SwimResultsSection({ report }: { report: SwimReport | null }) {
         stop, and if a change causes shoulder pain, stop and see a coach or a
         physiotherapist.
       </p>
-    </section>
+    </ScoreDashboard>
   );
 }

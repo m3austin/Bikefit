@@ -71,16 +71,22 @@ export function VideoAnalysis() {
   const [sideReport, setSideReport] = React.useState<StrokeReport | null>(null);
   const [frontalReport, setFrontalReport] =
     React.useState<FrontalStrokeReport | null>(null);
+  const [sideCap, setSideCap] = React.useState<{
+    frames: TimedFrame[];
+    aspect: number;
+  } | null>(null);
 
   const selectSide = React.useCallback(
     (file: File) => {
       setSideReport(null);
+      setSideCap(null);
       side.select(file);
     },
     [side],
   );
   const clearSide = React.useCallback(() => {
     setSideReport(null);
+    setSideCap(null);
     side.clear();
   }, [side]);
   const selectFront = React.useCallback(
@@ -108,6 +114,7 @@ export function VideoAnalysis() {
         };
       }
       setSideReport(report);
+      setSideCap({ frames, aspect });
       return {
         ok: true,
         markers: [
@@ -165,7 +172,10 @@ export function VideoAnalysis() {
           runningNoun="your pedaling"
           showFacingSide
           analyze={analyzeSide}
-          onReset={() => setSideReport(null)}
+          onReset={() => {
+            setSideReport(null);
+            setSideCap(null);
+          }}
           onChooseDifferent={clearSide}
         />
       ) : (
@@ -221,6 +231,9 @@ export function VideoAnalysis() {
       <VideoResultsSection
         sideReport={sideReport}
         frontalReport={frontalReport}
+        sideFrames={sideCap?.frames}
+        sideUrl={side.slot?.url}
+        aspect={sideCap?.aspect}
       />
 
       <section className="flex flex-col gap-3 border-t border-line pt-8">

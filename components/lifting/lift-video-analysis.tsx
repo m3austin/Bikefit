@@ -34,9 +34,13 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
   const urlRef = React.useRef<string | null>(null);
   const [slot, setSlot] = React.useState<Slot | null>(null);
   const [report, setReport] = React.useState<LiftReport | null>(null);
+  const [cap, setCap] = React.useState<{ frames: TimedFrame[]; aspect: number } | null>(
+    null,
+  );
 
   const select = React.useCallback((file: File) => {
     setReport(null);
+    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     const url = URL.createObjectURL(file);
     urlRef.current = url;
@@ -45,6 +49,7 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
 
   const clear = React.useCallback(() => {
     setReport(null);
+    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
     setSlot(null);
@@ -56,6 +61,7 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
       const outcome = buildLiftReport(frames, aspect, config);
       if (!outcome.ok) return outcome;
       setReport(outcome.report);
+      setCap({ frames, aspect });
       const markers = [
         ...outcome.report.anchorTMs.map((tMs) => ({
           tMs,
@@ -161,11 +167,20 @@ export function LiftVideoAnalysis({ liftId }: { liftId: string }) {
         analyzeHelper="Plays the video once and reads your form rep by rep, on this device."
         runningNoun="your set"
         analyze={analyze}
-        onReset={() => setReport(null)}
+        onReset={() => {
+          setReport(null);
+          setCap(null);
+        }}
         onChooseDifferent={clear}
       />
 
-      <LiftResultsSection config={config} report={report} />
+      <LiftResultsSection
+        config={config}
+        report={report}
+        frames={cap?.frames}
+        videoUrl={slot.url}
+        aspect={cap?.aspect}
+      />
     </div>
   );
 }

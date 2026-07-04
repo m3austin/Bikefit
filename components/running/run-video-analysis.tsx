@@ -83,6 +83,8 @@ function rearMarkers(report: RearGaitReport) {
   ];
 }
 
+type Captured = { frames: TimedFrame[]; aspect: number };
+
 export function RunVideoAnalysis() {
   const side = useVideoSlot();
   const rear = useVideoSlot();
@@ -90,16 +92,19 @@ export function RunVideoAnalysis() {
   const [rearReport, setRearReport] = React.useState<RearGaitReport | null>(
     null,
   );
+  const [sideCap, setSideCap] = React.useState<Captured | null>(null);
 
   const selectSide = React.useCallback(
     (file: File) => {
       setSideReport(null);
+      setSideCap(null);
       side.select(file);
     },
     [side],
   );
   const clearSide = React.useCallback(() => {
     setSideReport(null);
+    setSideCap(null);
     side.clear();
   }, [side]);
   const selectRear = React.useCallback(
@@ -119,6 +124,7 @@ export function RunVideoAnalysis() {
       const outcome = buildGaitReport(frames, aspect);
       if (!outcome.ok) return outcome;
       setSideReport(outcome.report);
+      setSideCap({ frames, aspect });
       return { ok: true, markers: sideMarkers(outcome.report) };
     },
     [],
@@ -189,7 +195,10 @@ export function RunVideoAnalysis() {
           analyzeHelper="Plays the video once and reads your cadence, landing, posture, and bounce, on this device."
           runningNoun="your stride"
           analyze={analyzeSide}
-          onReset={() => setSideReport(null)}
+          onReset={() => {
+            setSideReport(null);
+            setSideCap(null);
+          }}
           onChooseDifferent={clearSide}
         />
       ) : (
@@ -249,7 +258,13 @@ export function RunVideoAnalysis() {
         )}
       </section>
 
-      <RunResultsSection sideReport={sideReport} rearReport={rearReport} />
+      <RunResultsSection
+        sideReport={sideReport}
+        rearReport={rearReport}
+        sideFrames={sideCap?.frames}
+        sideUrl={side.slot?.url}
+        aspect={sideCap?.aspect}
+      />
     </div>
   );
 }

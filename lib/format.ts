@@ -67,3 +67,15 @@ export function formatRatio(ratio: number): string {
 export function formatSpm(stepsPerMinute: number): string {
   return `${Math.round(stepsPerMinute)} spm`;
 }
+
+/** Format a measured value by its target-range unit. The single place screen
+ * and dashboard agree on how each metric reads (§23.4 single-source display). */
+export function formatByUnit(
+  value: number,
+  unit: "deg" | "pct" | "ratio" | "spm",
+): string {
+  if (unit === "deg") return formatDeg(value);
+  if (unit === "pct") return formatPct(value);
+  if (unit === "spm") return formatSpm(value);
+  return formatRatio(value);
+}

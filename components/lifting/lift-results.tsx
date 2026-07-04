@@ -1,18 +1,22 @@
-import { FitRecommendations } from "@/components/fit/fit-recommendations";
-import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
+import { ScoreDashboard } from "@/components/kernel/score-dashboard";
+import type { MetricInput } from "@/lib/kernel/dashboard";
+import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
+import { toneForVerdict } from "@/lib/kernel/scoring";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import { SIDE_LANDMARKS } from "@/lib/pose-model";
 import type { LiftReport } from "@/lib/sports/lifting/biomechanics";
 import { evaluateLift, type LiftConfig } from "@/lib/sports/lifting/lifts";
 
 /*
- * LiftFit results: one change at a time (kernel recommendations), verdict
- * cards from the lift's own config, a rep summary, the fatigue-drift flag,
- * the 2D honesty note, and the app's most serious disclaimer. Pure
- * presentation over the lift rules engine; the lift is data.
+ * LiftFit results, on the shared score dashboard: an overall technique score,
+ * per-lift sub-scores, the key-frame stick-figure filmstrip, and the app's
+ * most serious disclaimer. The rep summary and fatigue flag stay as dashboard
+ * children; the lift is data throughout.
  */
 
-function toItems(
+function toMetrics(
   verdicts: ReturnType<typeof evaluateLift>["verdicts"],
-): VerdictItem[] {
+): MetricInput[] {
   return verdicts.map((v) => ({
     key: v.id,
     label: v.label,
@@ -21,6 +25,60 @@ function toItems(
     target: v.target,
     verdict: v.verdict,
   }));
+}
+
+/** The rep anchor (bottom / setup) and lockout, with the torso traced. Every
+ * lift shares this pair, so one builder serves all of them. */
+function buildLiftKeyFrames(
+  config: LiftConfig,
+  report: LiftReport,
+  frames: readonly TimedFrame[],
+  verdicts: ReturnType<typeof evaluateLift>["verdicts"],
+): KeyFrameSpec[] {
+  const ids = SIDE_LANDMARKS[report.side];
+  // Prefer the safety-critical reading if present (deadlift back rounding),
+  // else the first out-of-range metric, else neutral.
+  const worst =
+    verdicts.find((v) => v.verdict === "out_of_range") ?? verdicts[0];
+  const tone = toneForVerdict(worst?.verdict ?? "in_range");
+  const torso = [ids.shoulder, ids.hip];
+  const specs: KeyFrameSpec[] = [];
+  const anchorT = report.anchorTMs[0];
+  const lockoutT = report.lockoutTMs[0];
+  if (anchorT !== undefined) {
+    const landmarks = poseAt(frames, anchorT);
+    if (landmarks) {
+      specs.push({
+        tMs: anchorT,
+        label: config.anchorLabel.replace(/^\w/, (c) => c.toUpperCase()),
+        caption: "The hardest position of the rep, where form is tested most.",
+        landmarks,
+        highlights: [
+          { label: "Torso line", valueText: "check", points: torso, tone },
+        ],
+      });
+    }
+  }
+  if (lockoutT !== undefined) {
+    const landmarks = poseAt(frames, lockoutT);
+    if (landmarks) {
+      specs.push({
+        tMs: lockoutT,
+        label: config.lockoutLabel.replace(/^\w/, (c) => c.toUpperCase()),
+        caption: "The finish: standing tall with the rep fully locked out.",
+        landmarks,
+        highlights: [
+          {
+            label: "Hip open",
+            valueText: "check",
+            points: [ids.shoulder, ids.hip, ids.knee],
+            tone: "great",
+          },
+        ],
+      });
+    }
+  }
+  return specs;
 }
 
 function RepSummary({
@@ -66,52 +124,52 @@ function RepSummary({
 export function LiftResultsSection({
   config,
   report,
+  frames,
+  videoUrl,
+  aspect,
 }: {
   config: LiftConfig;
   report: LiftReport | null;
+  frames?: TimedFrame[];
+  videoUrl?: string;
+  aspect?: number;
 }) {
   if (!report) return null;
 
   const { primary, secondary, verdicts } = evaluateLift(config, report);
+  const keyFrames = frames
+    ? buildLiftKeyFrames(config, report, frames, verdicts)
+    : undefined;
 
   return (
-    <section className="flex flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-ink">Form analysis</h2>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          Measurements from your set, checked against target ranges. Each rep&apos;s{" "}
-          {config.anchorLabel} and {config.lockoutLabel} are marked on the
-          timeline above, so you can scrub to any rep and watch it yourself.
-        </p>
-      </div>
-
-      {report.fatigueDrift ? (
-        <div
-          role="note"
-          aria-label="Fatigue signal"
-          className="rounded-md border border-warn/50 bg-warn/10 p-4"
-        >
-          <p className="max-w-prose text-sm leading-relaxed text-ink">
-            Your reps drifted in pace across the set, often a sign of fatigue.
-            Later reps in a tiring set are where form breaks down, so weigh the
-            average below against how the last rep looked, and end sets before
-            form goes.
-          </p>
-        </div>
-      ) : null}
-
-      <FitRecommendations
-        primary={primary}
-        secondary={secondary}
-        drillsBase="/lifting/drills"
-        allClearNote="No change to make from these numbers. Keep the weight honest and the reps clean."
-      />
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards items={toItems(verdicts)} />
-      </div>
-
+    <ScoreDashboard
+      title="Form analysis"
+      intro={`Your ${config.name.toLowerCase()} set, scored against sensible ranges. The key moments below trace your body line so each number has a picture. This is a measuring tool, not a spotter or a coach.`}
+      metrics={toMetrics(verdicts)}
+      primary={primary}
+      secondary={secondary}
+      drillsBase="/lifting/drills"
+      allClearNote="No change to make from these numbers. Keep the weight honest and the reps clean."
+      keyFrames={keyFrames}
+      videoUrl={videoUrl}
+      aspect={aspect}
+      banners={
+        report.fatigueDrift ? (
+          <div
+            role="note"
+            aria-label="Fatigue signal"
+            className="rounded-md border border-warn/50 bg-warn/10 p-4"
+          >
+            <p className="max-w-prose text-sm leading-relaxed text-ink">
+              Your reps drifted in pace across the set, often a sign of fatigue.
+              Later reps in a tiring set are where form breaks down, so weigh
+              the average below against how the last rep looked, and end sets
+              before form goes.
+            </p>
+          </div>
+        ) : null
+      }
+    >
       <RepSummary report={report} config={config} />
 
       <div
@@ -138,6 +196,6 @@ export function LiftResultsSection({
         anything hurts, stop and see a coach or a physician. For heavy or
         contest lifting, work with a qualified coach.
       </p>
-    </section>
+    </ScoreDashboard>
   );
 }

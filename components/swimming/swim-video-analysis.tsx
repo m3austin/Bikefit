@@ -35,9 +35,13 @@ export function SwimVideoAnalysis() {
   const urlRef = React.useRef<string | null>(null);
   const [slot, setSlot] = React.useState<Slot | null>(null);
   const [report, setReport] = React.useState<SwimReport | null>(null);
+  const [cap, setCap] = React.useState<{ frames: TimedFrame[]; aspect: number } | null>(
+    null,
+  );
 
   const select = React.useCallback((file: File) => {
     setReport(null);
+    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     const url = URL.createObjectURL(file);
     urlRef.current = url;
@@ -46,6 +50,7 @@ export function SwimVideoAnalysis() {
 
   const clear = React.useCallback(() => {
     setReport(null);
+    setCap(null);
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
     urlRef.current = null;
     setSlot(null);
@@ -56,6 +61,7 @@ export function SwimVideoAnalysis() {
       const outcome = buildSwimReport(frames, aspect);
       if (!outcome.ok) return outcome;
       setReport(outcome.report);
+      setCap({ frames, aspect });
       const markers = [
         ...outcome.report.catchTMs.map((tMs) => ({
           tMs,
@@ -130,11 +136,19 @@ export function SwimVideoAnalysis() {
         analyzeHelper="Plays the video once and reads your near arm, on this device. Swim clips are noisy; check the confidence read in the results."
         runningNoun="your stroke"
         analyze={analyze}
-        onReset={() => setReport(null)}
+        onReset={() => {
+          setReport(null);
+          setCap(null);
+        }}
         onChooseDifferent={clear}
       />
 
-      <SwimResultsSection report={report} />
+      <SwimResultsSection
+        report={report}
+        frames={cap?.frames}
+        videoUrl={slot.url}
+        aspect={cap?.aspect}
+      />
     </div>
   );
 }

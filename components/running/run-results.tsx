@@ -1,6 +1,10 @@
-import { FitRecommendations } from "@/components/fit/fit-recommendations";
-import { VerdictCards, type VerdictItem } from "@/components/fit/verdict-cards";
-import { formatSpm } from "@/lib/format";
+import { ScoreDashboard } from "@/components/kernel/score-dashboard";
+import { formatDeg, formatSpm } from "@/lib/format";
+import type { MetricInput } from "@/lib/kernel/dashboard";
+import { poseAt, type KeyFrameSpec } from "@/lib/kernel/keyframes";
+import { toneForVerdict } from "@/lib/kernel/scoring";
+import type { TimedFrame } from "@/lib/kernel/tracking";
+import { SIDE_LANDMARKS } from "@/lib/pose-model";
 import type { FootStrike, GaitReport, RearGaitReport } from "@/lib/sports/running/biomechanics";
 import {
   evaluateRunRules,
@@ -48,7 +52,7 @@ const STRIKE_LABELS: Record<FootStrike, string> = {
   fore: "Forefoot",
 };
 
-function toItems(verdicts: RunMetricVerdict[]): VerdictItem[] {
+function toMetrics(verdicts: RunMetricVerdict[]): MetricInput[] {
   return verdicts.map((v) => ({
     key: v.id,
     label: VERDICT_LABELS[v.id].label,
@@ -57,6 +61,43 @@ function toItems(verdicts: RunMetricVerdict[]): VerdictItem[] {
     target: v.target,
     verdict: v.verdict,
   }));
+}
+
+/** Up to three footstrikes from the side view, with the landing knee traced. */
+function buildRunKeyFrames(
+  report: GaitReport,
+  frames: readonly TimedFrame[],
+  verdicts: RunMetricVerdict[],
+): KeyFrameSpec[] {
+  const ids = SIDE_LANDMARKS[report.side];
+  const kneeTone = toneForVerdict(
+    verdicts.find((v) => v.id === "kneeFlexAtContact")?.verdict ?? "in_range",
+  );
+  const kneeText =
+    report.kneeFlexAtContactDeg === null
+      ? "n/a"
+      : formatDeg(report.kneeFlexAtContactDeg.mean);
+  const pick = report.contactTMs.slice(0, 3);
+  const specs: KeyFrameSpec[] = [];
+  pick.forEach((tMs, i) => {
+    const landmarks = poseAt(frames, tMs);
+    if (!landmarks) return;
+    specs.push({
+      tMs,
+      label: `Footstrike ${i + 1}`,
+      caption: "The moment your foot meets the ground, where landing load lives.",
+      landmarks,
+      highlights: [
+        {
+          label: "Knee bend",
+          valueText: kneeText,
+          points: [ids.hip, ids.knee, ids.ankle],
+          tone: kneeTone,
+        },
+      ],
+    });
+  });
+  return specs;
 }
 
 function CadenceHero({ cadenceSpm }: { cadenceSpm: number }) {
@@ -150,9 +191,15 @@ function StrideSummary({
 export function RunResultsSection({
   sideReport,
   rearReport,
+  sideFrames,
+  sideUrl,
+  aspect,
 }: {
   sideReport: GaitReport | null;
   rearReport: RearGaitReport | null;
+  sideFrames?: TimedFrame[];
+  sideUrl?: string;
+  aspect?: number;
 }) {
   if (!sideReport && !rearReport) return null;
 
@@ -160,47 +207,45 @@ export function RunResultsSection({
   const { primary, secondary, verdicts } = evaluateRunRules(values);
   const highVariance = sideReport?.highVariance ?? false;
 
+  const keyFrames =
+    sideReport && sideFrames
+      ? buildRunKeyFrames(sideReport, sideFrames, verdicts)
+      : undefined;
+
   return (
-    <section className="flex flex-col gap-8 border-t border-line pt-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-ink">Gait analysis</h2>
-        <p className="max-w-prose text-sm leading-relaxed text-ink-muted">
-          Measurements from your video, checked against target ranges. Your
-          footstrikes are marked on the timeline above, so you can jump to
-          any landing and see it with your own eyes.
-        </p>
-      </div>
-
-      {highVariance ? (
-        <div
-          role="note"
-          aria-label="Data quality"
-          className="rounded-md border border-warn/40 bg-warn/10 p-4"
-        >
-          <p className="max-w-prose text-sm leading-relaxed text-ink">
-            Your strides varied more than usual between landings, which makes
-            these averages less trustworthy. A steadier camera, better light,
-            or a steadier pace usually cleans it up.
-          </p>
-        </div>
-      ) : null}
-
-      {values.cadenceSpm !== undefined ? (
-        <CadenceHero cadenceSpm={values.cadenceSpm} />
-      ) : null}
-
-      <FitRecommendations
-        primary={primary}
-        secondary={secondary}
-        drillsBase="/running/drills"
-        allClearNote="No change to make from these numbers. Run, and let how you feel over the next weeks have the final say."
-      />
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-lg font-semibold text-ink">Against the targets</h3>
-        <VerdictCards items={toItems(verdicts)} />
-        {sideReport ? <FootStrikeCard footStrike={sideReport.footStrike} /> : null}
-      </div>
+    <ScoreDashboard
+      title="Gait analysis"
+      intro="Your stride, scored against sensible ranges, with cadence up front because it is the one number worth knowing by heart. The key moments below trace your landing knee so each number has a picture."
+      metrics={toMetrics(verdicts)}
+      primary={primary}
+      secondary={secondary}
+      drillsBase="/running/drills"
+      allClearNote="No change to make from these numbers. Run, and let how you feel over the next weeks have the final say."
+      keyFrames={keyFrames}
+      videoUrl={sideUrl}
+      aspect={aspect}
+      banners={
+        <>
+          {highVariance ? (
+            <div
+              role="note"
+              aria-label="Data quality"
+              className="rounded-md border border-warn/40 bg-warn/10 p-4"
+            >
+              <p className="max-w-prose text-sm leading-relaxed text-ink">
+                Your strides varied more than usual between landings, which
+                makes these averages less trustworthy. A steadier camera,
+                better light, or a steadier pace usually cleans it up.
+              </p>
+            </div>
+          ) : null}
+          {values.cadenceSpm !== undefined ? (
+            <CadenceHero cadenceSpm={values.cadenceSpm} />
+          ) : null}
+        </>
+      }
+    >
+      {sideReport ? <FootStrikeCard footStrike={sideReport.footStrike} /> : null}
 
       <div className="flex flex-col gap-4">
         <h3 className="text-lg font-semibold text-ink">What was read</h3>
@@ -229,6 +274,6 @@ export function RunResultsSection({
         gently. If you are running with pain, or a change creates pain, stop
         and see a physiotherapist; that is their job, not this app&apos;s.
       </p>
-    </section>
+    </ScoreDashboard>
   );
 }

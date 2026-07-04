@@ -62,32 +62,40 @@ function markersFor(report: SwingReport) {
   ];
 }
 
+type Captured = { frames: TimedFrame[]; aspect: number };
+
 export function GolfVideoAnalysis() {
   const dtl = useVideoSlot();
   const face = useVideoSlot();
   const [dtlReport, setDtlReport] = React.useState<SwingReport | null>(null);
   const [faceReport, setFaceReport] = React.useState<SwingReport | null>(null);
+  const [dtlCap, setDtlCap] = React.useState<Captured | null>(null);
+  const [faceCap, setFaceCap] = React.useState<Captured | null>(null);
 
   const selectDtl = React.useCallback(
     (file: File) => {
       setDtlReport(null);
+      setDtlCap(null);
       dtl.select(file);
     },
     [dtl],
   );
   const clearDtl = React.useCallback(() => {
     setDtlReport(null);
+    setDtlCap(null);
     dtl.clear();
   }, [dtl]);
   const selectFace = React.useCallback(
     (file: File) => {
       setFaceReport(null);
+      setFaceCap(null);
       face.select(file);
     },
     [face],
   );
   const clearFace = React.useCallback(() => {
     setFaceReport(null);
+    setFaceCap(null);
     face.clear();
   }, [face]);
 
@@ -96,6 +104,7 @@ export function GolfVideoAnalysis() {
       const outcome = buildSwingReport(frames, aspect, "dtl");
       if (!outcome.ok) return outcome;
       setDtlReport(outcome.report);
+      setDtlCap({ frames, aspect });
       return { ok: true, markers: markersFor(outcome.report) };
     },
     [],
@@ -105,6 +114,7 @@ export function GolfVideoAnalysis() {
       const outcome = buildSwingReport(frames, aspect, "face");
       if (!outcome.ok) return outcome;
       setFaceReport(outcome.report);
+      setFaceCap({ frames, aspect });
       return { ok: true, markers: markersFor(outcome.report) };
     },
     [],
@@ -166,7 +176,10 @@ export function GolfVideoAnalysis() {
           analyzeHelper="Plays the video once and reads your tempo, posture, and head movement, on this device."
           runningNoun="your swing"
           analyze={analyzeDtl}
-          onReset={() => setDtlReport(null)}
+          onReset={() => {
+            setDtlReport(null);
+            setDtlCap(null);
+          }}
           onChooseDifferent={clearDtl}
         />
       ) : (
@@ -213,7 +226,10 @@ export function GolfVideoAnalysis() {
             analyzeHelper="Plays the video once and reads your turn, slide, and lead arm, on this device."
             runningNoun="your swing"
             analyze={analyzeFace}
-            onReset={() => setFaceReport(null)}
+            onReset={() => {
+              setFaceReport(null);
+              setFaceCap(null);
+            }}
             onChooseDifferent={clearFace}
           />
         ) : (
@@ -226,7 +242,15 @@ export function GolfVideoAnalysis() {
         )}
       </section>
 
-      <GolfResultsSection dtlReport={dtlReport} faceReport={faceReport} />
+      <GolfResultsSection
+        dtlReport={dtlReport}
+        faceReport={faceReport}
+        dtlFrames={dtlCap?.frames}
+        faceFrames={faceCap?.frames}
+        dtlUrl={dtl.slot?.url}
+        faceUrl={face.slot?.url}
+        aspect={dtlCap?.aspect ?? faceCap?.aspect}
+      />
     </div>
   );
 }
