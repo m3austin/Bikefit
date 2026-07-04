@@ -15,6 +15,8 @@ flowchart TD
     L -->|Welcome-back card| R["/fit/:id Results"]
     W -->|Calculate| R
     R -->|Save fit| G["/fits Saved fits"]
+    R -->|How do I do this?| J["/adjust Adjustment guide"]
+    V -->|Recommendation links| J
     G -->|Open| R
     G -->|New fit| C
     L --> S["/settings"]
@@ -258,3 +260,45 @@ flowchart TD
 ```
 
 Rules: one change at a time (single primary, rest secondary; deterministic by priority then rule order). Every target range and magnitude in `lib/fit-rules.ts` is a PLACEHOLDER pending owner-confirmed values; no session may tune them silently.
+
+---
+
+## Flow 12: Tip jar (zero pressure)
+
+```mermaid
+flowchart TD
+    A{"NEXT_PUBLIC_SUPPORT_URL set?"} -->|No| B["Feature fully hidden everywhere"]
+    A -->|Yes| C["Permanent quiet homes: Settings section + landing footer link"]
+    C --> D["Stripe Payment Link opens in a new tab; payment happens on Stripe's site"]
+    A -->|Yes| E{"Gentle note in the garage?"}
+    E -->|"No saved fit yet"| F["Never shows before the rider got value"]
+    E -->|"Shown within 90 days"| F
+    E -->|"Rider said No thanks"| G["Hidden forever"]
+    E -->|Otherwise| H["Inline card at the bottom of /fits, never a modal or overlay"]
+    H -->|Chip in| D
+    H -->|No thanks| G
+```
+
+Rules: nothing is ever gated on giving, the copy says so, and nothing about showing, dismissing, or giving is tracked or logged. The softness rules are unit-tested (lib/support.test.ts).
+
+---
+
+## Flow 13: Adjustment guide
+
+```mermaid
+flowchart TD
+    A["Nav: Adjust"] --> C["/adjust"]
+    B["Quick Fit result card: How do I do this?"] --> D["/adjust#section deep link"]
+    B2["Video recommendation, primary or secondary"] --> D
+    D --> C
+    C --> E["Per adjustment: difficulty, time, and tools BEFORE the steps"]
+    E --> F["Numbered steps + Pro tips + safety callouts"]
+    F --> G{"Bike type (defaults from the latest saved fit)"}
+    G -->|Matching or universal| H["Setup variants up front, likely one flagged"]
+    G -->|Not matching| I["Behind Show other setups; nothing is unreachable"]
+    C --> K["Glossary terms: tap, focus, or hover opens; Escape or outside tap dismisses"]
+    C --> L["Print: selector, TOC, and jargon chips hidden; every variant expanded; always light"]
+    C --> M["Shop-job boundary list + disclaimer"]
+```
+
+Rules: torque discipline is absolute: the app teaches riders to find the printed spec and use a torque wrench, and NEVER states a numeric torque value (enforced by lib/adjustments.test.ts). All definitions come from lib/glossary.ts, single source. Recheck-style video findings (re-record, in-person assessment) carry no wrench link by design.

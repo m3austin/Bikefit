@@ -73,6 +73,16 @@ Design rule: Fiona drives the default experience; Sam gets progressive disclosur
 |---|---------|---------|
 | F9 | Video Fit Analysis | `/fit` chooses between Quick Fit (F1-F7, unchanged) and video analysis: a side-view trainer video (required) and a straight-on view (optional) are pose-tracked 100% client-side (MediaPipe lite, video never uploaded). Extracts sagittal joint angles per pedal stroke plus frontal knee tracking, symmetry, and hip drop; a deterministic rules engine surfaces one primary adjustment at a time with verdicts per metric. Governing rules live in the repo CLAUDE.md (video fit analysis section); flows are User-Flows.md Flows 9-11. CAVEAT: every target range and magnitude in `lib/fit-rules.ts` is a PLACEHOLDER pending owner-confirmed sourced values. |
 
+### Shipped post-launch: adjustment guide (v1.4)
+| # | Feature | Summary |
+|---|---------|---------|
+| F11 | Adjustment guide | `/adjust`: plain-language, step-by-step wrenching for riders who have never loosened a seatpost (saddle height/setback/tilt, reach, bar height, cleats), with recurring Life Pro Tips ("mark before you move"), difficulty/time/tools shown before the steps, setup variants filtered by bike type (defaulting from the latest saved fit, everything reachable via "Show other setups"), a shop-job boundary list, and print-clean output. Tappable glossary definitions come from the single source `lib/glossary.ts`. Deep-linked from Quick Fit result cards and video recommendations ("How do I do this?"). HARD RULE, test-enforced: the app never states a numeric torque value; it teaches riders to find the printed spec and use a torque wrench. |
+
+### Shipped post-launch: tip jar (v1.3)
+| # | Feature | Summary |
+|---|---------|---------|
+| F10 | Tip jar | Wikipedia-inspired but softer: a zero-pressure way to support the app via a Stripe Payment Link (`NEXT_PUBLIC_SUPPORT_URL`; feature fully hidden when unset). Hard rules, pinned by unit tests: nothing is ever gated on giving; the gentle note appears inline (never a modal/overlay), only after the rider has saved a fit, at most once per 90 days per device; "No thanks" is permanent; nothing about showing/dismissing/giving is tracked. Permanent quiet homes: Settings section + landing footer link. Payments happen on Stripe's site; no card data or secret keys near the app. |
+
 ### Explicitly deferred
 Adjustment logbook, saddle/shoe product recommendations, community sharing, localisation beyond English.
 
