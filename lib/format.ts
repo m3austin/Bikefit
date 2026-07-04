@@ -62,3 +62,8 @@ export function formatPct(percent: number): string {
 export function formatRatio(ratio: number): string {
   return `${ratio.toFixed(1)}:1`;
 }
+
+/** Running cadence in steps per minute, e.g. "172 spm". Whole steps only. */
+export function formatSpm(stepsPerMinute: number): string {
+  return `${Math.round(stepsPerMinute)} spm`;
+}

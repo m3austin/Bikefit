@@ -31,6 +31,9 @@ const staticRoutes = [
   ["/golf/clubs", "club fitting"],
   ["/golf/video", "golf video upload"],
   ["/golf/drills", "golf drills"],
+  ["/running", "running home"],
+  ["/running/video", "running video upload"],
+  ["/running/drills", "running drills"],
   ["/privacy", "privacy policy"],
 ] as const;
 

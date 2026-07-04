@@ -36,7 +36,13 @@ export type GlossaryId =
   | "lie-angle"
   | "shaft-flex"
   | "grip-size"
-  | "wrist-to-floor";
+  | "wrist-to-floor"
+  | "cadence"
+  | "overstride"
+  | "foot-strike"
+  | "vertical-oscillation"
+  | "pelvic-drop"
+  | "gait";
 
 export type GlossaryEntry = {
   /** The word as it should read in a sentence. */
@@ -194,6 +200,36 @@ export const GLOSSARY: Record<GlossaryId, GlossaryEntry> = {
     term: "wrist to floor",
     definition:
       "The distance from your wrist crease to the ground while standing relaxed in flat shoes. The classic static measurement for starting club length.",
+  },
+  cadence: {
+    term: "cadence",
+    definition:
+      "How many steps you take per minute, counting both feet. The single most useful number in this analysis, and the easiest one to change.",
+  },
+  overstride: {
+    term: "overstriding",
+    definition:
+      "Landing with your foot well ahead of your hips, which acts like a small brake on every step. Landing closer to under your body is smoother and usually quicker.",
+  },
+  "foot-strike": {
+    term: "foot strike",
+    definition:
+      "Which part of the foot touches down first: heel, midfoot, or forefoot. Good runners do all three; it is a description, not a grade.",
+  },
+  "vertical-oscillation": {
+    term: "vertical oscillation",
+    definition:
+      "How much your body bounces up and down each step. Some bounce is normal; a lot of it is energy spent going up instead of forward.",
+  },
+  "pelvic-drop": {
+    term: "pelvic drop",
+    definition:
+      "How much the free-side hip dips while the other leg is on the ground. A big dip often points at hip strength, and it shows best from behind.",
+  },
+  gait: {
+    term: "gait",
+    definition:
+      "The overall pattern of how you run: where your feet land, how your body moves, and the rhythm holding it together.",
   },
 };
 

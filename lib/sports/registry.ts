@@ -28,8 +28,8 @@ export const SPORTS: readonly SportModule[] = [
     brand: "RunFit",
     sport: "running",
     accent: "#FF8A5C",
+    accentClass: "sport-running",
     tagline: "Check your stride before your knees do.",
-    comingSoon: true,
   },
   {
     slug: "lifting",

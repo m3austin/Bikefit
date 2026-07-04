@@ -5,12 +5,37 @@
  * pure math stays in each module's own biomechanics/rules files, never here.
  */
 
+import type { GlossaryId } from "@/lib/glossary";
+
 export type SportSlug =
   | "cycling"
   | "golf"
   | "running"
   | "lifting"
   | "swimming";
+
+/*
+ * The shared drill shape (the sport's analogue of cycling's adjustment
+ * guide entries). Each sport narrows the id to its own union so rule
+ * `adjust` links stay typo-proof; the presentation layer only needs this
+ * common shape.
+ */
+export type DrillDifficulty = "easy" | "moderate";
+
+export type SportDrill<Id extends string = string> = {
+  id: Id;
+  title: string;
+  /** Plain language: what this fixes and why it matters. */
+  why: string;
+  gear: string[];
+  difficulty: DrillDifficulty;
+  time: string;
+  steps: string[];
+  tips: string[];
+  /** When self-coaching should hand over to a human. */
+  coachNote: string;
+  glossaryIds: GlossaryId[];
+};
 
 export type SportModule = {
   slug: SportSlug;

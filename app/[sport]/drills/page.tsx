@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AdjustmentGuide } from "@/components/fit/adjustment-guide";
 import { GolfDrillsGuide } from "@/components/golf/golf-drills";
+import { RunDrillsGuide } from "@/components/running/run-drills";
 
 export const metadata: Metadata = {
   title: "Drill guide",
@@ -19,5 +20,6 @@ export default async function DrillsPage({
   const { sport } = await params;
   if (sport === "cycling") return <AdjustmentGuide />;
   if (sport === "golf") return <GolfDrillsGuide />;
+  if (sport === "running") return <RunDrillsGuide />;
   notFound();
 }

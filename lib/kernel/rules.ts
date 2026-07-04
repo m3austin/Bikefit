@@ -16,7 +16,7 @@ export type TargetRange = {
   high: number;
   /** Marginal band width beyond [low, high] on both sides. */
   margin: number;
-  unit: "deg" | "pct" | "ratio";
+  unit: "deg" | "pct" | "ratio" | "spm";
 };
 
 /** Band verdict: inside [low, high], inside the margin, or beyond it. */

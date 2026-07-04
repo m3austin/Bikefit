@@ -127,6 +127,14 @@
   --accent: #2ab8b8;
   --accent-ink: #06302f;
 }
+.sport-running {
+  --accent: #b8441a;
+  --accent-ink: #ffffff;
+}
+.dark .sport-running {
+  --accent: #ff8a5c;
+  --accent-ink: #3a1607;
+}
 
 /* Respect prefers-reduced-motion everywhere (UX-UI-Design §2.4, §6). */
 @media (prefers-reduced-motion: reduce) {

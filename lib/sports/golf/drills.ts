@@ -6,7 +6,7 @@
  * invented numbers presented as fact.
  */
 
-import type { GlossaryId } from "@/lib/glossary";
+import type { DrillDifficulty, SportDrill } from "@/lib/sports/types";
 
 export type GolfDrillId =
   | "posture"
@@ -16,22 +16,9 @@ export type GolfDrillId =
   | "bump"
   | "structure";
 
-export type Difficulty = "easy" | "moderate";
+export type Difficulty = DrillDifficulty;
 
-export type GolfDrill = {
-  id: GolfDrillId;
-  title: string;
-  /** Plain language: what this fixes and why it matters. */
-  why: string;
-  gear: string[];
-  difficulty: Difficulty;
-  time: string;
-  steps: string[];
-  tips: string[];
-  /** When self-coaching should hand over to a human. */
-  coachNote: string;
-  glossaryIds: GlossaryId[];
-};
+export type GolfDrill = SportDrill<GolfDrillId>;
 
 export const GOLF_DRILLS: readonly GolfDrill[] = [
   {

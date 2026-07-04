@@ -42,6 +42,9 @@ const routes = [
   "/golf/clubs",
   "/golf/video",
   "/golf/drills",
+  "/running",
+  "/running/video",
+  "/running/drills",
   "/privacy",
 ];
 
