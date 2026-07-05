@@ -13,11 +13,17 @@ import { cn } from "@/lib/utils";
  * follows the 0-10 score, which already encodes closer-to-range = higher).
  */
 
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/** "Jun 29" in a fixed order. Deterministic on purpose: Intl's default-locale
+ * output differs between the SSR runtime and the browser (month-day vs
+ * day-month), which tripped a hydration mismatch on the dev preview. */
 function shortDate(ms: number): string {
-  return new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-  }).format(new Date(ms));
+  const d = new Date(ms);
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
 function Delta({ delta }: { delta: number }) {
