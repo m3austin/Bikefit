@@ -490,6 +490,7 @@ export function VideoWorkspace({
       {analyzing ? (
         <div className="flex flex-col items-center gap-4 rounded-md border border-line bg-surface p-6">
           <LoadingCharacter
+            size={96}
             expectedDurationMs={duration ? duration * 1000 : undefined}
             label={`Analyzing ${runningNoun}, ${currentTime.toFixed(0)}s / ${
               duration ? duration.toFixed(0) : "?"

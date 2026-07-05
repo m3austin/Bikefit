@@ -22,6 +22,25 @@ import { cn } from "@/lib/utils";
  * e.g. ?anim=golden. The `animation` prop overrides everything.
  */
 
+/*
+ * The SVG-internal animations are main-thread-driven, and the one place this
+ * character shows (the analyzing screen) is exactly when pose inference pegs
+ * the main thread, freezing them. This wrapper animation is transform-only on
+ * a promoted HTML layer, so the compositor keeps it moving under load; the
+ * per-part animations resume whenever the thread breathes. Kept here, not in
+ * animation-css.ts, which is a verbatim port of the reference set.
+ */
+const STAGE_CSS = `
+.ml-stage{ will-change: transform; animation: mlStageBob 2.6s ease-in-out infinite; }
+@keyframes mlStageBob{
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-5%) rotate(2deg);}
+}
+@media (prefers-reduced-motion: reduce){
+  .ml-stage, .ml-loading .char, .ml-loading .char *{ animation: none !important; }
+}
+`;
+
 export function LoadingCharacter({
   animation,
   expectedDurationMs,
@@ -69,10 +88,10 @@ export function LoadingCharacter({
     <div className={cn("ml-loading flex flex-col items-center gap-3", className)}>
       {/* Hoisted, deduped by href across every LoadingCharacter instance. */}
       <style href="ml-loading-animations" precedence="default">
-        {ANIMATION_CSS}
+        {ANIMATION_CSS + STAGE_CSS}
       </style>
       <div
-        className="w-full"
+        className="ml-stage w-full"
         style={{ maxWidth: size, aspectRatio: "200 / 230" }}
         aria-hidden="true"
         dangerouslySetInnerHTML={{ __html: html }}
