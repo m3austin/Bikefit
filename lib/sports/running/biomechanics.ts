@@ -103,6 +103,11 @@ export const GAIT_SEGMENTATION = {
   minSeparationMs: 400,
   minRelativeHeight: 0.5,
   smoothWindow: 5,
+  // A runner drifts across frame, so the ankle-Y amplitude drifts too: judge
+  // footstrikes by local prominence, not a whole-clip height bar.
+  minProminence: 0.15,
+  // A contact off the stride beat is a tracker artifact, not a step.
+  intervalTolerance: 0.4,
   /** Stance ends when the smoothed ankle lifts this fraction of its
    * within-stride travel above the footstrike level. */
   stanceLiftFraction: 0.25,

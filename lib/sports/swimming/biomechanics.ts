@@ -95,6 +95,10 @@ export const STROKE_SEGMENTATION: CycleOptions = {
   minSeparationMs: 700,
   minRelativeHeight: 0.5,
   smoothWindow: 5,
+  // Splash and refraction drift the wrist amplitude; judge catches by local
+  // prominence, and drop off-rhythm phantoms from bubbles.
+  minProminence: 0.15,
+  intervalTolerance: 0.4,
 };
 
 /** Below this many full near-arm cycles there is no report. PLACEHOLDER. */

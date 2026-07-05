@@ -111,9 +111,14 @@ export type LiftTracker = "hip" | "wrist";
  * minSeparationMs 1200 assumes no one grinds reps faster than one per 1.2 s.
  */
 export const REP_SEGMENTATION: CycleOptions = {
-  minSeparationMs: 1200,
+  // 550ms floor admits fast, honest reps (speed squats, touch-and-go bench)
+  // that a 1.2s floor merged into one; the rhythm filter below removes the
+  // real double-counts a low floor would otherwise let through.
+  minSeparationMs: 550,
   minRelativeHeight: 0.5,
   smoothWindow: 5,
+  // A "rep" off the set's tempo is a bounce or tracker artifact, not a rep.
+  intervalTolerance: 0.4,
 };
 
 /** Below this many full reps there is no report at all. PLACEHOLDER. */

@@ -121,6 +121,8 @@ export const DEFAULT_SEGMENTATION: SegmentationOptions = {
   minSeparationMs: 350,
   minRelativeHeight: 0.5,
   smoothWindow: 5,
+  // A pedal stroke off the cadence beat is a tracker artifact, not a stroke.
+  intervalTolerance: 0.4,
 };
 
 /**
