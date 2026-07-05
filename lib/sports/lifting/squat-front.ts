@@ -15,6 +15,7 @@
  */
 
 import { detectCyclePeaks } from "@/lib/kernel/cycles";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import { computeStats, type MetricStats } from "@/lib/kernel/geometry";
 import type { MetricInput } from "@/lib/kernel/dashboard";
 import { verdictFor, type TargetRange } from "@/lib/kernel/rules";
@@ -72,7 +73,7 @@ export function buildSquatFrontReport(
   timedFrames: readonly TimedFrame[],
   aspectRatio: number,
 ): SquatFrontAnalysis {
-  const samples = timedFrames.map((t) => ({
+  const samples = cleanPoseFrames(timedFrames).map((t) => ({
     tMs: t.tMs,
     frontal: computeFrontalFrameMetrics(t.frame, aspectRatio),
     hipY: midHipY(t.frame),

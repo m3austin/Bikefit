@@ -29,6 +29,7 @@ import {
   type CycleOptions,
   type CyclePoint,
 } from "@/lib/kernel/cycles";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import {
   computeStats,
   interiorAngleDeg,
@@ -423,8 +424,9 @@ export function buildLiftReport(
   config: LiftReportConfig,
   options: CycleOptions = REP_SEGMENTATION,
 ): LiftAnalysis {
-  const vote = detectFacingSide(timedFrames.map((t) => t.frame));
-  const samples: LiftTimedMetrics[] = timedFrames.map((t) => ({
+  const frames = cleanPoseFrames(timedFrames);
+  const vote = detectFacingSide(frames.map((t) => t.frame));
+  const samples: LiftTimedMetrics[] = frames.map((t) => ({
     tMs: t.tMs,
     metrics: computeLiftFrameMetrics(t.frame, vote.side, aspectRatio),
   }));

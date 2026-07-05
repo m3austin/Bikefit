@@ -27,6 +27,7 @@ import {
   type CycleOptions,
   type CyclePoint,
 } from "@/lib/kernel/cycles";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import {
   computeStats,
   interiorAngleDeg,
@@ -317,8 +318,9 @@ export function buildGaitReport(
   aspectRatio: number,
   options: GaitSegmentationOptions = GAIT_SEGMENTATION,
 ): GaitAnalysis {
-  const vote = detectFacingSide(timedFrames.map((t) => t.frame));
-  const samples: RunTimedMetrics[] = timedFrames.map((t) => ({
+  const frames = cleanPoseFrames(timedFrames);
+  const vote = detectFacingSide(frames.map((t) => t.frame));
+  const samples: RunTimedMetrics[] = frames.map((t) => ({
     tMs: t.tMs,
     metrics: computeRunFrameMetrics(t.frame, vote.side, aspectRatio),
   }));
@@ -588,7 +590,7 @@ export function buildRearGaitReport(
   aspectRatio: number,
   options: CycleOptions = GAIT_SEGMENTATION,
 ): RearGaitAnalysis {
-  const samples: RearTimedMetrics[] = timedFrames.map((t) => ({
+  const samples: RearTimedMetrics[] = cleanPoseFrames(timedFrames).map((t) => ({
     tMs: t.tMs,
     metrics: computeRearFrameMetrics(t.frame, aspectRatio),
   }));

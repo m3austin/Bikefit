@@ -17,6 +17,7 @@ import {
   type CycleOptions,
   type CyclePoint,
 } from "@/lib/kernel/cycles";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import {
   computeStats,
   interiorAngleDeg,
@@ -278,8 +279,9 @@ export function buildStrokeReport(
   aspectRatio: number,
   options: SegmentationOptions = DEFAULT_SEGMENTATION,
 ): StrokeReport {
-  const vote = detectFacingSide(timedFrames.map((t) => t.frame));
-  const samples: TimedMetrics[] = timedFrames.map((t) => ({
+  const frames = cleanPoseFrames(timedFrames);
+  const vote = detectFacingSide(frames.map((t) => t.frame));
+  const samples: TimedMetrics[] = frames.map((t) => ({
     tMs: t.tMs,
     metrics: computeFrameMetrics(t.frame, vote.side, aspectRatio),
   }));
@@ -586,7 +588,7 @@ export function buildFrontalStrokeReport(
   aspectRatio: number,
   options: SegmentationOptions = DEFAULT_SEGMENTATION,
 ): FrontalStrokeReport {
-  const samples: FrontalTimedMetrics[] = timedFrames.map((t) => ({
+  const samples: FrontalTimedMetrics[] = cleanPoseFrames(timedFrames).map((t) => ({
     tMs: t.tMs,
     metrics: computeFrontalFrameMetrics(t.frame, aspectRatio),
   }));

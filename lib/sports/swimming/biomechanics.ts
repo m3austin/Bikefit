@@ -23,6 +23,7 @@ import {
   type CycleOptions,
   type CyclePoint,
 } from "@/lib/kernel/cycles";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import {
   computeStats,
   type MetricStats,
@@ -240,8 +241,9 @@ export function buildSwimReport(
   aspectRatio: number,
   options: CycleOptions = STROKE_SEGMENTATION,
 ): SwimAnalysis {
-  const vote = detectFacingSide(timedFrames.map((t) => t.frame));
-  const samples: SwimTimedMetrics[] = timedFrames.map((t) => ({
+  const frames = cleanPoseFrames(timedFrames);
+  const vote = detectFacingSide(frames.map((t) => t.frame));
+  const samples: SwimTimedMetrics[] = frames.map((t) => ({
     tMs: t.tMs,
     metrics: computeSwimFrameMetrics(t.frame, vote.side, aspectRatio),
   }));

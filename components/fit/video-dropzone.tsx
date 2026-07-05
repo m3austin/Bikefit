@@ -86,6 +86,14 @@ export function VideoDropzone({
         <div className="flex flex-col gap-1">
           <p className="font-medium text-ink">{prompt}</p>
           <p className="text-sm text-ink-muted">mp4, mov, or webm</p>
+          {/* The two capture choices that most improve a rough read: the
+              analyzer reads every frame, so more frames (slow-motion) and
+              cleaner frames (good light) beat everything downstream. */}
+          <p className="max-w-sm text-xs text-ink-muted">
+            Good light and a steady phone give the sharpest read. For fast
+            movements, your phone&apos;s slow-motion mode captures far more
+            detail for the analyzer to work with.
+          </p>
           {/* Desktop-only (pointer-fine): phones already reach cloud photos
               through the system picker, so they don't need the workaround. */}
           <p className="hidden max-w-sm text-xs text-ink-muted pointer-fine:block">

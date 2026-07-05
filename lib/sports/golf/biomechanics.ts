@@ -30,6 +30,7 @@ import {
   movingAverage,
   type Point2,
 } from "@/lib/kernel/geometry";
+import { cleanPoseFrames } from "@/lib/kernel/pose-clean";
 import { METRIC_VISIBILITY_FLOOR, type TimedFrame } from "@/lib/kernel/tracking";
 import { LANDMARK, type PoseFrame } from "@/lib/pose-model";
 
@@ -380,7 +381,7 @@ export function buildSwingReport(
   aspectRatio: number,
   view: SwingView,
 ): SwingAnalysis {
-  const samples: GolfTimedMetrics[] = timedFrames.map((t) => ({
+  const samples: GolfTimedMetrics[] = cleanPoseFrames(timedFrames).map((t) => ({
     tMs: t.tMs,
     metrics: computeGolfFrameMetrics(t.frame, aspectRatio),
   }));
