@@ -86,6 +86,13 @@ export function VideoDropzone({
         <div className="flex flex-col gap-1">
           <p className="font-medium text-ink">{prompt}</p>
           <p className="text-sm text-ink-muted">mp4, mov, or webm</p>
+          {/* Desktop-only (pointer-fine): phones already reach cloud photos
+              through the system picker, so they don't need the workaround. */}
+          <p className="hidden max-w-sm text-xs text-ink-muted pointer-fine:block">
+            Clip in Google Photos or iCloud? Download it to this computer
+            first, or open this page on your phone, where the picker reads
+            your photos app directly.
+          </p>
         </div>
         <Button type="button" onClick={() => inputRef.current?.click()}>
           <UploadCloud />
