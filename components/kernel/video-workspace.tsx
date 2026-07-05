@@ -4,6 +4,7 @@ import * as React from "react";
 import { Activity, RotateCcw, TriangleAlert, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { ConfidenceBanner } from "@/components/fit/confidence-banner";
 import {
   VideoControls,
@@ -50,6 +51,14 @@ const ANALYSIS_STEP_MS = 1000 / 60;
 const SEEK_TIMEOUT_MS = 600;
 
 type LandmarkerState = "loading" | "ready" | "error";
+
+/** m:ss.d for the trim readout (tenths, so a tight window is legible). */
+function formatClock(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00.0";
+  const mins = Math.floor(seconds / 60);
+  const secs = (seconds % 60).toFixed(1).padStart(4, "0");
+  return `${mins}:${secs}`;
+}
 
 /** Seek the video and resolve once the frame is decoded ("seeked"), with a
  * timeout so a withheld event (target already current) can't hang the pass. */
@@ -147,6 +156,11 @@ export function VideoWorkspace({
   const [playing, setPlaying] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
+  // Optional trim window (ms): analysis is limited to [trimStartMs, trimEndMs].
+  // Bracketing just the movement removes walk-ins, setups, and practice reps
+  // that would otherwise seed phantom cycles and misplaced start points.
+  const [trimStartMs, setTrimStartMs] = React.useState(0);
+  const [trimEndMs, setTrimEndMs] = React.useState(0);
   const [playbackRate, setPlaybackRate] = React.useState(1);
   const [liveConfidence, setLiveConfidence] = React.useState<number | null>(
     null,
@@ -356,10 +370,13 @@ export function VideoWorkspace({
     const video = videoRef.current;
     if (!video || landmarkerRef.current === null) return;
     const runId = analysisRunRef.current;
-    const durationMs =
+    const clipMs =
       (Number.isFinite(video.duration) ? video.duration : 0) * 1000;
+    // Honor the trim window when set; otherwise analyze the whole clip.
+    const endMs = trimEndMs > trimStartMs ? trimEndMs : clipMs;
     const times = analysisTimestamps({
-      durationMs,
+      startMs: trimStartMs,
+      durationMs: endMs,
       stepMs: ANALYSIS_STEP_MS,
       maxSamples: MAX_ANALYSIS_SAMPLES,
       maxMs: MAX_ANALYSIS_MS,
@@ -375,7 +392,7 @@ export function VideoWorkspace({
       }
     }
     finalizeAnalysis();
-  }, [detectAt, finalizeAnalysis]);
+  }, [detectAt, finalizeAnalysis, trimStartMs, trimEndMs]);
 
   // Keep the canvas pixel size matched to the video's rendered box.
   React.useEffect(() => {
@@ -495,6 +512,9 @@ export function VideoWorkspace({
           onLoadedMetadata={(e) => {
             const v = e.currentTarget;
             setDuration(v.duration);
+            // Reset the trim window to the whole clip for this video.
+            setTrimStartMs(0);
+            setTrimEndMs(Number.isFinite(v.duration) ? v.duration * 1000 : 0);
             aspectRef.current =
               v.videoHeight > 0 ? v.videoWidth / v.videoHeight : 1;
           }}
@@ -609,15 +629,68 @@ export function VideoWorkspace({
       )}
 
       {!analyzing ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            onClick={startAnalysis}
-            disabled={landmarkerState !== "ready" || duration === 0}
-          >
-            <Activity />
-            {analysis.status === "done" ? "Analyze again" : analyzeLabel}
-          </Button>
-          <p className="text-sm text-ink-muted">{analyzeHelper}</p>
+        <div className="flex flex-col gap-4">
+          {duration > 0 ? (
+            <div className="flex flex-col gap-2 rounded-md border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-ink">
+                  Trim to the movement{" "}
+                  <span className="font-normal text-ink-muted">(optional)</span>
+                </p>
+                {trimStartMs > 0 || trimEndMs < duration * 1000 - 1 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setTrimStartMs(0);
+                      setTrimEndMs(duration * 1000);
+                    }}
+                  >
+                    Reset to full clip
+                  </Button>
+                ) : null}
+              </div>
+              <Slider
+                aria-label="Trim the analyzed range"
+                min={0}
+                max={Math.max(duration, 0.01)}
+                step={0.05}
+                minStepsBetweenThumbs={1}
+                value={[trimStartMs / 1000, trimEndMs / 1000]}
+                onValueChange={(values) => {
+                  const s = values[0] ?? 0;
+                  const e = values[1] ?? duration;
+                  const sMs = s * 1000;
+                  const eMs = e * 1000;
+                  // Preview the handle being dragged (the one that moved most).
+                  handleSeek(
+                    Math.abs(sMs - trimStartMs) >= Math.abs(eMs - trimEndMs)
+                      ? s
+                      : e,
+                  );
+                  setTrimStartMs(sMs);
+                  setTrimEndMs(eMs);
+                }}
+              />
+              <p className="measurement text-xs text-ink-muted">
+                Analyzing {formatClock(trimStartMs / 1000)} to{" "}
+                {formatClock(trimEndMs / 1000)} (
+                {formatClock(Math.max(0, (trimEndMs - trimStartMs) / 1000))} of
+                movement). Bracket just the movement for the cleanest read.
+              </p>
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={startAnalysis}
+              disabled={landmarkerState !== "ready" || duration === 0}
+            >
+              <Activity />
+              {analysis.status === "done" ? "Analyze again" : analyzeLabel}
+            </Button>
+            <p className="text-sm text-ink-muted">{analyzeHelper}</p>
+          </div>
         </div>
       ) : null}
 

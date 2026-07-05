@@ -14,6 +14,13 @@ function Slider({
   className,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
+  // Radix wants one Thumb per value, so a range slider (two values) renders
+  // two handles. Falls back to a single thumb for a plain (one-value) slider.
+  const values = Array.isArray(props.value)
+    ? props.value
+    : Array.isArray(props.defaultValue)
+      ? props.defaultValue
+      : [0];
   return (
     <SliderPrimitive.Root
       data-slot="slider"
@@ -26,7 +33,12 @@ function Slider({
       <SliderPrimitive.Track className="relative h-1.5 w-full grow rounded-full bg-surface-2">
         <SliderPrimitive.Range className="absolute h-full rounded-full bg-accent" />
       </SliderPrimitive.Track>
-      <SliderPrimitive.Thumb className="block size-5 rounded-full border-2 border-accent bg-surface shadow-[var(--shadow-overlay)] transition-colors disabled:pointer-events-none disabled:opacity-50" />
+      {values.map((_, i) => (
+        <SliderPrimitive.Thumb
+          key={i}
+          className="block size-5 rounded-full border-2 border-accent bg-surface shadow-[var(--shadow-overlay)] transition-colors disabled:pointer-events-none disabled:opacity-50"
+        />
+      ))}
     </SliderPrimitive.Root>
   );
 }

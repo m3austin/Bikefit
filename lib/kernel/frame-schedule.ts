@@ -8,13 +8,17 @@
  */
 
 export type ScheduleOptions = {
-  /** Clip length in ms (video.duration * 1000); 0/unknown yields one sample. */
+  /** Trim out-point / clip end in ms (video.duration * 1000); 0/unknown
+   * yields one sample. */
   durationMs: number;
+  /** Trim in-point in ms; analysis starts here. Defaults to 0. */
+  startMs?: number;
   /** Desired spacing in ms (e.g. 1000/30 for ~native 30fps). */
   stepMs: number;
   /** Hard cap on the number of samples (memory + wall-clock budget). */
   maxSamples: number;
-  /** Never sample past this timestamp (long-clip guard). */
+  /** Never sample past this timestamp, measured from the start (long-clip
+   * guard). */
   maxMs: number;
 };
 
@@ -26,16 +30,19 @@ export type ScheduleOptions = {
  */
 export function analysisTimestamps(options: ScheduleOptions): number[] {
   const { stepMs, maxSamples, maxMs } = options;
-  const span = Math.min(Math.max(options.durationMs, 0), maxMs);
-  if (span <= 0 || maxSamples <= 1 || stepMs <= 0) return [0];
+  const start = Math.max(options.startMs ?? 0, 0);
+  // The out-point, capped so no clip samples past `start + maxMs`.
+  const end = Math.min(Math.max(options.durationMs, 0), start + maxMs);
+  const span = end - start;
+  if (span <= 0 || maxSamples <= 1 || stepMs <= 0) return [start];
 
   // Intervals at the desired spacing, coarsened to fit the budget so the whole
-  // clip is still covered end to end (premium: no silently dropped tail).
+  // window is still covered end to end (premium: no silently dropped tail).
   const intervals = Math.min(maxSamples - 1, Math.ceil(span / stepMs));
   const step = span / intervals;
 
   const times: number[] = [];
-  for (let i = 0; i < intervals; i++) times.push(i * step);
-  times.push(span); // exact clip end, no float drift
+  for (let i = 0; i < intervals; i++) times.push(start + i * step);
+  times.push(end); // exact out-point, no float drift
   return times;
 }

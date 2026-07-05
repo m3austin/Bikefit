@@ -54,4 +54,30 @@ describe("analysisTimestamps", () => {
     const ts = analysisTimestamps({ durationMs: 0, stepMs: 100, ...CAPS });
     expect(ts).toEqual([0]);
   });
+
+  it("starts at a trim in-point and ends at the trim out-point", () => {
+    // User trimmed the analyzed window to 1.0s..4.0s of a longer clip.
+    const ts = analysisTimestamps({
+      startMs: 1000,
+      durationMs: 4000,
+      stepMs: 100,
+      ...CAPS,
+    });
+    expect(ts[0]).toBe(1000);
+    expect(ts[ts.length - 1]).toBe(4000);
+    expect(Math.min(...ts)).toBeGreaterThanOrEqual(1000);
+    for (let i = 1; i < ts.length; i++) {
+      expect(ts[i]).toBeGreaterThan(ts[i - 1] ?? 0);
+    }
+  });
+
+  it("degenerates to the start when the trim window is empty", () => {
+    const ts = analysisTimestamps({
+      startMs: 4000,
+      durationMs: 4000,
+      stepMs: 100,
+      ...CAPS,
+    });
+    expect(ts).toEqual([4000]);
+  });
 });
