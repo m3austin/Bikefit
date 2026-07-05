@@ -86,16 +86,17 @@ function defaultFace(): string {
   <path d="M89 124 Q100 133 111 124" stroke="var(--plum)" stroke-width="3.8" fill="none" stroke-linecap="round" class="mouth"/>`;
 }
 
-type CharOpts = {
-  liquidTop?: number;
-  liquidH?: number;
-  face?: string;
-  extraInside?: string;
-  extraOutside?: string;
-};
-
 /* full assembler */
-function charSVG(anim: string, opts?: CharOpts): string {
+function charSVG(
+  anim: string,
+  opts?: {
+    liquidTop?: number;
+    liquidH?: number;
+    face?: string;
+    extraInside?: string;
+    extraOutside?: string;
+  },
+): string {
   opts = opts || {};
   const liquidTop = opts.liquidTop !== undefined ? opts.liquidTop : 114;
   const liquidH = opts.liquidH !== undefined ? opts.liquidH : 50;
@@ -298,11 +299,7 @@ export const ANIMS: readonly MarshmallowAnimation[] = [
 /** All valid keys (for validating a forced choice from a query param). */
 export const ANIMATION_KEYS: readonly AnimationKey[] = ANIMS.map((a) => a.key);
 
-const BY_KEY = new Map<AnimationKey, MarshmallowAnimation>(
-  ANIMS.map((a) => [a.key, a]),
-);
-
 /** The animation entry for a key, or undefined if unknown. */
 export function getAnimation(key: AnimationKey): MarshmallowAnimation | undefined {
-  return BY_KEY.get(key);
+  return ANIMS.find((a) => a.key === key);
 }

@@ -28,11 +28,6 @@ const RARE_KEYS: AnimationKey[] = ANIMS.filter((a) => a.group === "rare").map(
   (a) => a.key,
 );
 
-function at(keys: readonly AnimationKey[], index: number): AnimationKey {
-  const clamped = Math.max(0, Math.min(keys.length - 1, index));
-  return keys[clamped] ?? FALLBACK;
-}
-
 export type PickOptions = {
   /** How long the load is expected to run. Rares need this >= the threshold. */
   expectedDurationMs?: number;
@@ -58,17 +53,19 @@ export function pickAnimationKey(opts: PickOptions = {}): AnimationKey {
 
   const r = Math.min(0.999999999, Math.max(0, rng()));
 
+  // r is clamped below 1, so each floor(index) is provably in range; the
+  // ?? FALLBACK only guards the empty-pool impossibility.
   if (rareEligible) {
     const rareTotal = RARE_PROBABILITY_EACH * RARE_KEYS.length;
     if (r < rareTotal) {
-      return at(RARE_KEYS, Math.floor(r / RARE_PROBABILITY_EACH));
+      return RARE_KEYS[Math.floor(r / RARE_PROBABILITY_EACH)] ?? FALLBACK;
     }
     // Remaining mass is the common pool, split evenly.
     const commonR = (r - rareTotal) / (1 - rareTotal);
-    return at(COMMON_KEYS, Math.floor(commonR * COMMON_KEYS.length));
+    return COMMON_KEYS[Math.floor(commonR * COMMON_KEYS.length)] ?? FALLBACK;
   }
 
-  return at(COMMON_KEYS, Math.floor(r * COMMON_KEYS.length));
+  return COMMON_KEYS[Math.floor(r * COMMON_KEYS.length)] ?? FALLBACK;
 }
 
 /** True when `value` is a real animation key (validating a forced choice). */
