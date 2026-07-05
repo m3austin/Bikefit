@@ -34,7 +34,8 @@ export const metadata: Metadata = {
   applicationName: "SportFits",
   icons: {
     icon: "/icon.svg",
-    apple: "/icon.svg",
+    // iOS does not render SVG touch icons; serve the PNG there.
+    apple: "/icon-192.png",
   },
   openGraph: {
     type: "website",

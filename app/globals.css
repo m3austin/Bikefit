@@ -33,6 +33,11 @@
   /* Elevation: shadows only on overlays. */
   --shadow-overlay: 0 8px 30px rgb(16 24 32 / 0.12);
 
+  /* SportFits mark gradient (unified emerald; see components/brand). Brand
+   * tokens, NOT accent: per-sport accent remaps must never re-tint the logo. */
+  --logo-g1: #2fae72;
+  --logo-g2: #0f6b41;
+
   color-scheme: light;
 }
 
@@ -50,6 +55,9 @@
   --danger: #e5645f;
 
   --shadow-overlay: 0 8px 30px rgb(0 0 0 / 0.35);
+
+  --logo-g1: #4fd98f;
+  --logo-g2: #178754;
 
   color-scheme: dark;
 }

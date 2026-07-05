@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SportFitsMark } from "@/components/brand/sportfits-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { getLiveSport } from "@/lib/sports/registry";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,12 @@ export function AppHeader() {
       <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"
-          className="measurement text-lg font-semibold tracking-tight text-ink"
+          className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-ink"
         >
-          Sport<span className="text-accent">Fits</span>
+          <SportFitsMark size={22} />
+          <span>
+            Sport<span className="text-accent">Fits</span>
+          </span>
         </Link>
         <nav
           aria-label="Primary"

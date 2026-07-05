@@ -1,14 +1,17 @@
-<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BikeFit">
-  <rect width="512" height="512" rx="112" fill="#3DDC97" />
-  <g fill="none" stroke="#062B1D" stroke-width="22" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="152" cy="346" r="74" />
-    <circle cx="360" cy="346" r="74" />
-    <path d="M256 346 L232 214" />
-    <path d="M232 214 L346 214" />
-    <path d="M256 346 L346 214" />
-    <path d="M346 214 L360 346" />
-    <path d="M256 346 L152 346" />
-    <path d="M232 214 L152 346" />
-    <path d="M346 214 L384 196" />
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SportFits">
+  <defs>
+    <linearGradient id="blades" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4FD98F"/><stop offset="1" stop-color="#178754"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#080A0E"/>
+  <g transform="translate(256 256) scale(0.72)">
+    <path d="M0 0 L0 -235 A235 235 0 0 1 203.5 -117.5 Z" fill="url(#blades)"/>
+    <path d="M0 0 L203.5 -117.5 A235 235 0 0 1 203.5 117.5 Z" fill="url(#blades)" opacity=".8"/>
+    <path d="M0 0 L203.5 117.5 A235 235 0 0 1 0 235 Z" fill="url(#blades)" opacity=".6"/>
+    <path d="M0 0 L0 235 A235 235 0 0 1 -203.5 117.5 Z" fill="url(#blades)" opacity=".45"/>
+    <path d="M0 0 L-203.5 117.5 A235 235 0 0 1 -203.5 -117.5 Z" fill="url(#blades)" opacity=".3"/>
+    <path d="M0 0 L-203.5 -117.5 A235 235 0 0 1 0 -235 Z" fill="url(#blades)" opacity=".2"/>
+    <circle cx="0" cy="0" r="30" fill="#0A3323"/>
   </g>
 </svg>
