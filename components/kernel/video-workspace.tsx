@@ -12,6 +12,7 @@ import {
 import { drawPoseOverlay } from "@/components/fit/draw-pose";
 import { useThemeColor } from "@/components/fit/use-theme-color";
 import { LoadingCharacter } from "@/components/kernel/loading-character";
+import { analysisTimestamps } from "@/lib/kernel/frame-schedule";
 import {
   averageFrameVisibility,
   detectFacingSide,
@@ -40,8 +41,37 @@ const SIDE_VOTE_MAX_FRAMES = 240;
 // Analysis-pass caps so a long clip can't grow memory without bound.
 const MAX_ANALYSIS_MS = 60_000;
 const MAX_ANALYSIS_SAMPLES = 3_600;
+// Desired seek spacing for the offline pass: ~60fps, finer than typical phone
+// capture, so fast events (impact, foot contact, chest touch) are sampled
+// densely. The schedule coarsens this to fit the budget on long clips.
+const ANALYSIS_STEP_MS = 1000 / 60;
+// If a browser withholds the "seeked" event (target already current), don't
+// hang the pass; move on after this long.
+const SEEK_TIMEOUT_MS = 600;
 
 type LandmarkerState = "loading" | "ready" | "error";
+
+/** Seek the video and resolve once the frame is decoded ("seeked"), with a
+ * timeout so a withheld event (target already current) can't hang the pass. */
+function seekTo(video: HTMLVideoElement, seconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      video.removeEventListener("seeked", done);
+      resolve();
+    };
+    const timer = setTimeout(done, SEEK_TIMEOUT_MS);
+    video.addEventListener("seeked", done);
+    try {
+      video.currentTime = seconds;
+    } catch {
+      done();
+    }
+  });
+}
 
 /** What a module's analyze closure reports back to the workspace shell. */
 export type AnalyzeOutcome =
@@ -106,6 +136,10 @@ export function VideoWorkspace({
   const aspectRef = React.useRef(1);
   const analyzingRef = React.useRef(false);
   const collectedRef = React.useRef<TimedFrame[]>([]);
+  // The analysis pass steps the video by seeking, not by real-time playback,
+  // so a slow device still processes every scheduled frame. This guards
+  // against overlapping runs and cancellation.
+  const analysisRunRef = React.useRef(0);
 
   const [landmarkerState, setLandmarkerState] =
     React.useState<LandmarkerState>("loading");
@@ -122,6 +156,8 @@ export function VideoWorkspace({
   const [analysis, setAnalysis] = React.useState<AnalysisState>({
     status: "idle",
   });
+  // 0..1 progress through the offline analysis pass, for the progress readout.
+  const [analysisProgress, setAnalysisProgress] = React.useState(0);
   // The browser cannot decode this file (commonly an iPhone HEVC recording
   // opened in a browser without an HEVC decoder). Resets with a new video,
   // since a new videoUrl remounts the workspace via its key.
@@ -238,22 +274,13 @@ export function VideoWorkspace({
     [draw, finalizeAnalysis, showFacingSide],
   );
 
-  // Per-frame pose detection, synced to actual decoded video frames when the
-  // browser supports requestVideoFrameCallback, falling back to
-  // requestAnimationFrame otherwise.
-  React.useEffect(() => {
-    if (landmarkerState !== "ready") return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let cancelled = false;
-    let handle: number | null = null;
-    // TS's DOM lib declares this as always present, but real-world support is
-    // newer than most of the rest of the DOM API, so guard it at runtime too.
-    const useVfc = typeof video.requestVideoFrameCallback === "function";
-
-    function runDetection(mediaTimeSec?: number) {
+  // Detect the pose on the currently decoded frame and route it to handleFrame
+  // stamped with `mediaTimeMs`. Shared by the live-preview loop and the
+  // offline analysis pass, so both go through one monotonic-timestamp path.
+  const detectAt = React.useCallback(
+    (mediaTimeMs: number) => {
       const landmarker = landmarkerRef.current;
+      const video = videoRef.current;
       if (!landmarker || !video) return;
       // Not decodable yet (metadata still loading): nothing to detect on.
       if (video.videoWidth === 0 || video.readyState < 2) return;
@@ -264,18 +291,32 @@ export function VideoWorkspace({
       lastDetectTsRef.current = ts;
       try {
         const result = landmarker.detect(video, ts);
-        handleFrame(
-          result.landmarks[0] ?? [],
-          (mediaTimeSec ?? video.currentTime) * 1000,
-        );
+        handleFrame(result.landmarks[0] ?? [], mediaTimeMs);
       } catch {
         // A transient decode/detect hiccup should not stop playback.
       }
-    }
+    },
+    [handleFrame],
+  );
+
+  // Live-preview detection while the user scrubs or plays, synced to decoded
+  // frames via requestVideoFrameCallback (rAF fallback). It YIELDS during the
+  // analysis pass: the seek loop owns detection then, so this must not also
+  // detect (that would double-count frames and fight the monotonic timestamp).
+  React.useEffect(() => {
+    if (landmarkerState !== "ready") return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let cancelled = false;
+    let handle: number | null = null;
+    const useVfc = typeof video.requestVideoFrameCallback === "function";
 
     function tick(_now?: number, metadata?: { mediaTime?: number }) {
-      if (cancelled) return;
-      runDetection(metadata?.mediaTime);
+      if (cancelled || !video) return;
+      if (!analyzingRef.current) {
+        detectAt((metadata?.mediaTime ?? video.currentTime) * 1000);
+      }
       scheduleNext();
     }
 
@@ -289,7 +330,7 @@ export function VideoWorkspace({
     }
 
     function onSeeked() {
-      if (!useVfc) runDetection();
+      if (!useVfc && !analyzingRef.current) detectAt(video!.currentTime * 1000);
     }
 
     scheduleNext();
@@ -305,7 +346,36 @@ export function VideoWorkspace({
         else cancelAnimationFrame(handle);
       }
     };
-  }, [landmarkerState, handleFrame]);
+  }, [landmarkerState, detectAt]);
+
+  // The offline analysis pass: seek to each scheduled timestamp, wait for the
+  // frame to decode, detect it. Every scheduled frame is processed regardless
+  // of device speed, at an exact timestamp; a runId guards against overlap and
+  // cancellation.
+  const runSeekAnalysis = React.useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || landmarkerRef.current === null) return;
+    const runId = analysisRunRef.current;
+    const durationMs =
+      (Number.isFinite(video.duration) ? video.duration : 0) * 1000;
+    const times = analysisTimestamps({
+      durationMs,
+      stepMs: ANALYSIS_STEP_MS,
+      maxSamples: MAX_ANALYSIS_SAMPLES,
+      maxMs: MAX_ANALYSIS_MS,
+    });
+    for (let k = 0; k < times.length; k++) {
+      if (!analyzingRef.current || analysisRunRef.current !== runId) return;
+      const t = times[k] ?? 0;
+      await seekTo(video, t / 1000);
+      if (!analyzingRef.current || analysisRunRef.current !== runId) return;
+      detectAt(t);
+      if (k % 4 === 0 || k === times.length - 1) {
+        setAnalysisProgress((k + 1) / times.length);
+      }
+    }
+    finalizeAnalysis();
+  }, [detectAt, finalizeAnalysis]);
 
   // Keep the canvas pixel size matched to the video's rendered box.
   React.useEffect(() => {
@@ -352,18 +422,24 @@ export function VideoWorkspace({
     const video = videoRef.current;
     if (!video || landmarkerRef.current === null) return;
     collectedRef.current = [];
+    confidenceSamplesRef.current = [];
     analyzingRef.current = true;
+    analysisRunRef.current += 1;
+    setAnalysisProgress(0);
     setAnalysis({ status: "running" });
     onResetRef.current?.();
-    setPlaybackRate(1);
-    video.playbackRate = 1;
-    video.currentTime = 0;
-    void video.play();
-  }, []);
+    // The pass drives the clip by seeking, not playback, so pause and let the
+    // seek loop step through every scheduled frame.
+    video.pause();
+    setPlaying(false);
+    void runSeekAnalysis();
+  }, [runSeekAnalysis]);
 
   const cancelAnalysis = React.useCallback(() => {
     analyzingRef.current = false;
+    analysisRunRef.current += 1; // invalidate the running seek loop
     collectedRef.current = [];
+    setAnalysisProgress(0);
     videoRef.current?.pause();
     setAnalysis({ status: "idle" });
   }, []);
@@ -492,13 +568,27 @@ export function VideoWorkspace({
           <LoadingCharacter
             size={96}
             expectedDurationMs={duration ? duration * 1000 : undefined}
-            label={`Analyzing ${runningNoun}, ${currentTime.toFixed(0)}s / ${
-              duration ? duration.toFixed(0) : "?"
-            }s`}
+            label={`Analyzing ${runningNoun} frame by frame, ${Math.round(
+              analysisProgress * 100,
+            )}%`}
             srStatus={`Analyzing ${runningNoun}. This stays on your device.`}
           />
-          <p className="text-xs text-ink-muted">
-            Everything stays on this device.
+          <div
+            className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-2"
+            role="progressbar"
+            aria-valuenow={Math.round(analysisProgress * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Analysis progress"
+          >
+            <div
+              className="h-full rounded-full bg-accent transition-[width] duration-200"
+              style={{ width: `${Math.round(analysisProgress * 100)}%` }}
+            />
+          </div>
+          <p className="max-w-xs text-center text-xs text-ink-muted">
+            Reading every frame for the most accurate result. This stays on your
+            device.
           </p>
           <Button variant="outline" onClick={cancelAnalysis}>
             <X />
