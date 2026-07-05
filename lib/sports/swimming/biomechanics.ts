@@ -17,6 +17,7 @@
  * =======================================================================
  */
 
+import { scoreConfidence, type ConfidenceReport } from "@/lib/kernel/confidence";
 import {
   detectCyclePeaks,
   type CycleOptions,
@@ -218,6 +219,9 @@ export type SwimReport = {
   headLiftPct: MetricStats | null;
   /** Elbow height above shoulder at recovery, % of torso. */
   elbowRecoveryPct: MetricStats | null;
+  /** Overall result confidence (near-side tracking, stroke-rhythm steadiness,
+   * side-vote). No underwater second signal, so no cross-validation term. */
+  confidence: ConfidenceReport;
 };
 
 export type SwimAnalysis =
@@ -319,6 +323,14 @@ export function buildSwimReport(
 
   const lastSample = samples[samples.length - 1];
 
+  const confidence = scoreConfidence({
+    trackedFraction: samples.length > 0 ? wristFrames / samples.length : 0,
+    cycleDurationsMs: durations,
+    cycleCount: cycles.length,
+    minCycles: MIN_STROKES_FOR_REPORT,
+    sideConfidence: vote.confidence,
+  });
+
   return {
     ok: true,
     report: {
@@ -326,6 +338,7 @@ export function buildSwimReport(
       sideConfidence: vote.confidence,
       meanVisibility,
       lowConfidence: meanVisibility < SWIM_CONFIDENCE_FLOOR,
+      confidence,
       sampleCount: samples.length,
       analyzedMs: lastSample ? lastSample.tMs : 0,
       strokeCount: cycles.length,

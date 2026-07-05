@@ -125,6 +125,7 @@ describe("lift configs", () => {
       repDurationStats: null,
       metrics: [],
       fatigueDrift: false,
+      confidence: { score: 1, level: "high" as const, reasons: [] },
     };
     const { primary, secondary, verdicts } = evaluateLift(squat, empty);
     expect(primary).toBeNull();

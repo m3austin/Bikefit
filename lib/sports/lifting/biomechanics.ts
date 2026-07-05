@@ -20,6 +20,11 @@
  */
 
 import {
+  crossValidateEvents,
+  scoreConfidence,
+  type ConfidenceReport,
+} from "@/lib/kernel/confidence";
+import {
   detectCyclePeaks,
   type CycleOptions,
   type CyclePoint,
@@ -388,6 +393,9 @@ export type LiftReport = {
   metrics: LiftMetricValue[];
   /** Data-quality flag: rep durations drifting (a fatigue signal). */
   fatigueDrift: boolean;
+  /** Overall result confidence (tracking, rep-tempo steadiness, side-vote, and
+   * how often the tracker's bottoms agree with the co-moving joint's). */
+  confidence: ConfidenceReport;
 };
 
 export type LiftAnalysis =
@@ -482,6 +490,32 @@ export function buildLiftReport(
   const repDurationStats = computeStats(durations);
   const lastSample = samples[samples.length - 1];
 
+  // Second, independent bottom signal: the joint that co-moves with the
+  // tracker (knee under a hip-tracked squat/deadlift, elbow under a
+  // wrist-tracked bench) reaches its own lowest point at the same rep bottom.
+  // How often the two agree is a confidence input.
+  const coJoint = (m: LiftFrameMetrics): Point2 | null =>
+    config.tracker === "hip" ? m.knee : m.elbow;
+  const coTMs = detectCyclePeaks(
+    samples
+      .filter((s) => coJoint(s.metrics) !== null)
+      .map((s) => ({ tMs: s.tMs, value: coJoint(s.metrics)?.y ?? 0 })),
+    options,
+  ).map((i) => {
+    const coSamples = samples.filter((s) => coJoint(s.metrics) !== null);
+    return coSamples[i]?.tMs ?? 0;
+  });
+  const { agreement } = crossValidateEvents(anchorTMs, coTMs, 250);
+
+  const confidence = scoreConfidence({
+    trackedFraction: samples.length > 0 ? trackerFrames / samples.length : 0,
+    cycleDurationsMs: durations,
+    cycleCount: contexts.length,
+    minCycles: MIN_REPS_FOR_REPORT,
+    sideConfidence: vote.confidence,
+    agreement,
+  });
+
   return {
     ok: true,
     report: {
@@ -491,6 +525,7 @@ export function buildLiftReport(
       sampleCount: samples.length,
       analyzedMs: lastSample ? lastSample.tMs : 0,
       repCount: contexts.length,
+      confidence,
       anchorTMs,
       lockoutTMs,
       repDurationStats,

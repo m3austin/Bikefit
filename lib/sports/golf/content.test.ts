@@ -113,6 +113,7 @@ function report(overrides: Partial<SwingReport>): SwingReport {
     xFactorPct: null,
     hipSlidePct: null,
     leadArmAtTopDeg: null,
+    confidence: { score: 1, level: "high", reasons: [] },
     ...overrides,
   };
 }

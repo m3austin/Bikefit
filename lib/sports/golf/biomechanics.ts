@@ -23,6 +23,7 @@ import {
   lastStillEndBefore,
   speedsFromTrack,
 } from "@/lib/kernel/events";
+import { scoreConfidence, type ConfidenceReport } from "@/lib/kernel/confidence";
 import {
   interiorAngleDeg,
   medianFilter,
@@ -359,6 +360,9 @@ export type SwingReport = {
   xFactorPct: number | null;
   hipSlidePct: number | null;
   leadArmAtTopDeg: number | null;
+  /** Overall result confidence, driven by how much of the swing the hands
+   * were tracked (a single-event capture, so no cyclic rhythm term). */
+  confidence: ConfidenceReport;
 };
 
 export type SwingAnalysis =
@@ -477,6 +481,16 @@ export function buildSwingReport(
 
   const lastSample = samples[samples.length - 1];
 
+  // Single-event capture: confidence is driven by how much of the clip the
+  // hands were tracked (no cyclic rhythm, no left/right side-vote here).
+  const wristVisible = samples.filter((s) => s.metrics.wristPos !== null).length;
+  const confidence = scoreConfidence({
+    trackedFraction: samples.length > 0 ? wristVisible / samples.length : 0,
+    cycleDurationsMs: [],
+    cycleCount: 1,
+    minCycles: 1,
+  });
+
   return {
     ok: true,
     report: {
@@ -484,6 +498,7 @@ export function buildSwingReport(
       sampleCount: samples.length,
       analyzedMs: lastSample ? lastSample.tMs : 0,
       phases: phaseTimes,
+      confidence,
       tempoRatio,
       spineAtAddressDeg: spineAtAddress,
       spineChangeDeg,

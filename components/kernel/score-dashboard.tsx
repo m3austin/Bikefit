@@ -10,6 +10,7 @@ import { KeyFrameFilmstrip } from "@/components/kernel/key-frame-filmstrip";
 import { ScoreRing } from "@/components/kernel/score-ring";
 import { useAnalysisHistory } from "@/components/kernel/use-analysis-history";
 import { formatByUnit } from "@/lib/format";
+import type { ConfidenceReport } from "@/lib/kernel/confidence";
 import { buildScoreBoard, type MetricInput } from "@/lib/kernel/dashboard";
 import type { KeyFrameSpec } from "@/lib/kernel/keyframes";
 import type { Finding } from "@/lib/kernel/rules";
@@ -59,9 +60,46 @@ export type ScoreDashboardProps = {
   historyVariant?: string;
   /** Banners rendered above the score (confidence, data-quality warnings). */
   banners?: React.ReactNode;
+  /** Result confidence. When below "high", a banner leads with the caveat and
+   * how to re-film, so a noisy capture never reads as a confident result. */
+  confidence?: ConfidenceReport | null;
   /** Sport-specific extras and the disclaimer, rendered at the end. */
   children?: React.ReactNode;
 };
+
+function ConfidenceNote({ confidence }: { confidence: ConfidenceReport }) {
+  if (confidence.level === "high") return null;
+  const low = confidence.level === "low";
+  return (
+    <div
+      role="note"
+      aria-label="Result confidence"
+      className={cn(
+        "flex flex-col gap-2 rounded-md border p-4",
+        low ? "border-danger/50 bg-danger/10" : "border-warn/50 bg-warn/10",
+      )}
+    >
+      <p className="text-sm font-medium text-ink">
+        {low
+          ? "Low-confidence read: the numbers below may be off."
+          : "Fair-confidence read: worth a second clip to be sure."}
+      </p>
+      {confidence.reasons.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {confidence.reasons.map((r) => (
+            <li key={r} className="text-sm leading-relaxed text-ink-muted">
+              {r}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="text-sm leading-relaxed text-ink-muted">
+        A steady clip with your whole body in frame and good light gives the
+        most reliable read.
+      </p>
+    </div>
+  );
+}
 
 function CategoryCard({
   label,
@@ -122,6 +160,7 @@ export function ScoreDashboard({
   historySport,
   historyVariant,
   banners,
+  confidence,
   children,
 }: ScoreDashboardProps) {
   const board = React.useMemo(() => buildScoreBoard(metrics), [metrics]);
@@ -135,6 +174,8 @@ export function ScoreDashboard({
           {intro}
         </p>
       </div>
+
+      {confidence ? <ConfidenceNote confidence={confidence} /> : null}
 
       {banners}
 

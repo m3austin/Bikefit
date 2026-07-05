@@ -136,6 +136,7 @@ export function VideoResultsSection({
       rabbitHoleHref="/method#cycling"
       historySport="cycling"
       historyVariant="video"
+      confidence={sideReport?.confidence ?? null}
       keyFrames={keyFrames}
       videoUrl={sideUrl}
       aspect={aspect}

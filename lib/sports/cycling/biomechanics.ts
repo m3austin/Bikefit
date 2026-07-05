@@ -11,6 +11,7 @@
  * are unsourced engineering defaults, not validated values.
  */
 
+import { scoreConfidence, type ConfidenceReport } from "@/lib/kernel/confidence";
 import {
   detectCyclePeaks,
   type CycleOptions,
@@ -260,6 +261,8 @@ export type StrokeReport = {
   };
   /** Data-quality flag: knee-at-BDC spread beyond the placeholder cutoff. */
   highVariance: boolean;
+  /** Overall result confidence (leg tracking, cadence steadiness, side-vote). */
+  confidence: ConfidenceReport;
 };
 
 /**
@@ -329,12 +332,26 @@ export function buildStrokeReport(
   const kneeStats = computeStats(kneeAtBdcDeg);
   const lastSample = samples[samples.length - 1];
 
+  const cadenceDurationsMs: number[] = [];
+  for (let i = 1; i < bdcTMs.length; i++) {
+    cadenceDurationsMs.push((bdcTMs[i] ?? 0) - (bdcTMs[i - 1] ?? 0));
+  }
+  const legVisible = samples.filter((s) => s.metrics.kneeDeg !== null).length;
+  const confidence = scoreConfidence({
+    trackedFraction: samples.length > 0 ? legVisible / samples.length : 0,
+    cycleDurationsMs: cadenceDurationsMs,
+    cycleCount: strokes.length,
+    minCycles: 3,
+    sideConfidence: vote.confidence,
+  });
+
   return {
     side: vote.side,
     sideConfidence: vote.confidence,
     sampleCount: samples.length,
     analyzedMs: lastSample ? lastSample.tMs : 0,
     strokeCount: strokes.length,
+    confidence,
     cadenceRpm,
     bdcTMs,
     threeOClockTMs,

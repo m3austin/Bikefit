@@ -42,6 +42,7 @@ const SAMPLE_REPORT: StrokeReport = {
     torso: { min: 38.9, max: 46.2, mean: 42.5, stdDev: 1.7, count: 380 },
   },
   highVariance: false,
+  confidence: { score: 0.88, level: "high", reasons: [] },
 };
 
 /** Synthetic frontal report so the combined-view table can be reviewed here. */

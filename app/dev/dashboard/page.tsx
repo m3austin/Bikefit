@@ -191,6 +191,26 @@ export default function DashboardPreviewPage() {
         drillsBase="/golf/drills"
         keyFrames={KEY_FRAMES}
       />
+      <div className="flex flex-col gap-2 border-t border-line pt-6">
+        <p className="text-sm font-medium text-ink">
+          Low-confidence gate (synthetic)
+        </p>
+        <ScoreDashboard
+          title="Swing analysis"
+          intro="Same numbers, but the capture was poor: the gate leads with the caveat."
+          metrics={METRICS}
+          primary={PRIMARY}
+          secondary={[]}
+          drillsBase="/golf/drills"
+          confidence={{
+            score: 0.34,
+            level: "low",
+            reasons: [
+              "We could only see you for part of the clip. Keep your whole body in frame, side on, in good light.",
+            ],
+          }}
+        />
+      </div>
     </div>
   );
 }

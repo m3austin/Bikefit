@@ -18,6 +18,11 @@
  */
 
 import {
+  crossValidateEvents,
+  scoreConfidence,
+  type ConfidenceReport,
+} from "@/lib/kernel/confidence";
+import {
   detectCyclePeaks,
   type CycleOptions,
   type CyclePoint,
@@ -290,6 +295,9 @@ export type GaitReport = {
   };
   /** Data-quality flag: knee-at-contact spread beyond the placeholder cutoff. */
   highVariance: boolean;
+  /** Overall result confidence (tracking, rhythm, side-vote, and how often
+   * the ankle-low contacts agree with the knee-flexion minima). */
+  confidence: ConfidenceReport;
 };
 
 export type GaitAnalysis =
@@ -428,6 +436,33 @@ export function buildGaitReport(
   const kneeStats = computeStats(kneeFlex);
   const lastSample = samples[samples.length - 1];
 
+  // Second, independent contact signal: the knee is most flexed (interior
+  // angle smallest) around stance, so minima of the knee angle should line up
+  // with the ankle-low contacts. How often they agree is a confidence input.
+  const kneeMinTMs = detectCyclePeaks(
+    samples
+      .filter((s) => s.metrics.kneeDeg !== null)
+      .map((s) => ({ tMs: s.tMs, value: -(s.metrics.kneeDeg ?? 0) })),
+    options,
+  ).map((i) => {
+    const kneeSamples = samples.filter((s) => s.metrics.kneeDeg !== null);
+    return kneeSamples[i]?.tMs ?? 0;
+  });
+  const { agreement } = crossValidateEvents(contactTMs, kneeMinTMs, 150);
+
+  const cycleDurationsMs: number[] = [];
+  for (let i = 1; i < contactTMs.length; i++) {
+    cycleDurationsMs.push((contactTMs[i] ?? 0) - (contactTMs[i - 1] ?? 0));
+  }
+  const confidence = scoreConfidence({
+    trackedFraction: samples.length > 0 ? ankleFrames / samples.length : 0,
+    cycleDurationsMs,
+    cycleCount: strides.length,
+    minCycles: MIN_STRIDES_FOR_REPORT,
+    sideConfidence: vote.confidence,
+    agreement,
+  });
+
   return {
     ok: true,
     report: {
@@ -436,6 +471,7 @@ export function buildGaitReport(
       sampleCount: samples.length,
       analyzedMs: lastSample ? lastSample.tMs : 0,
       strideCount: strides.length,
+      confidence,
       cadenceSpm,
       contactTMs,
       toeOffTMs,

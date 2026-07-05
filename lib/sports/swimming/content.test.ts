@@ -111,6 +111,7 @@ function report(overrides: Partial<SwimReport>): SwimReport {
     bodyRollPct: stats(18),
     headLiftPct: stats(10),
     elbowRecoveryPct: stats(35),
+    confidence: { score: 1, level: "high", reasons: [] },
     ...overrides,
   };
 }

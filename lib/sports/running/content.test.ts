@@ -95,6 +95,7 @@ function sideReport(overrides: Partial<GaitReport>): GaitReport {
     trunkLeanDeg: stats(6),
     footStrike: { heel: 5, mid: 1, fore: 0, label: "heel" },
     highVariance: false,
+    confidence: { score: 1, level: "high", reasons: [] },
     ...overrides,
   };
 }

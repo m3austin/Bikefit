@@ -70,6 +70,7 @@ function sagittalReport(overrides: {
         overrides.torsoMean === undefined ? null : stats(overrides.torsoMean),
     },
     highVariance: false,
+    confidence: { score: 1, level: "high", reasons: [] },
   };
 }
 

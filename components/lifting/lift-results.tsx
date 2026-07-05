@@ -175,6 +175,7 @@ export function LiftResultsSection({
       rabbitHoleHref="/method#lifting"
       historySport="lifting"
       historyVariant={config.id}
+      confidence={report.confidence}
       allClearNote="No change to make from these numbers. Keep the weight honest and the reps clean."
       keyFrames={keyFrames}
       videoUrl={videoUrl}
