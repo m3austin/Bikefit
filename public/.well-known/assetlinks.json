@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "REPLACE.WITH.PWABUILDER.PACKAGE.ID",
+      "package_name": "com.sportfits.app",
       "sha256_cert_fingerprints": [
-        "REPLACE:WITH:PWABUILDER:SIGNING:KEY:FINGERPRINT"
+        "REPLACE:WITH:PLAY:APP:SIGNING:SHA256:FINGERPRINT"
       ]
     }
   }
