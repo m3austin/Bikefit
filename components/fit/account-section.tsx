@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { CloudCheck, CloudOff, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,16 @@ export function AccountSection() {
         </div>
         <p className="text-sm text-ink-muted">
           Signing out keeps every fit on this device. It only stops syncing.
+        </p>
+        <p className="text-sm text-ink-muted">
+          Want to remove your account entirely?{" "}
+          <Link
+            href="/delete-account"
+            className="text-accent underline underline-offset-2"
+          >
+            Delete your account and data
+          </Link>
+          .
         </p>
       </div>
     );

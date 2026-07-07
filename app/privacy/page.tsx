@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy",
   description:
-    "BikeFit's privacy policy, in plain language: your data stays on your device unless you opt into sync.",
+    "The SportFits privacy policy, in plain language: your data stays on your device unless you opt into sync.",
 };
 
 /*
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
           Your data stays yours
         </h1>
         <p className="max-w-prose text-base leading-relaxed text-ink-muted">
-          The short version: BikeFit keeps your data on your device, sends
+          The short version: SportFits keeps your data on your device, sends
           nothing anywhere unless you explicitly opt in, and runs no
           analytics or ads of any kind. The details, in plain language:
         </p>
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
       <Section title="No tracking, no ads, one functional cookie">
         <p>
           There are no analytics, no ad networks, and no tracking scripts.
-          BikeFit sets a single functional cookie that remembers your light or
+          SportFits sets a single functional cookie that remembers your light or
           dark theme choice so the page paints correctly. That is the whole
           list.
         </p>
@@ -83,7 +83,15 @@ export default function PrivacyPage() {
           your saved fits and profile are stored with our database provider
           (Supabase) so they can follow you across devices. Deleting a fit
           while signed in removes its synced copy too. Signing out keeps your
-          local data and stops syncing.
+          local data and stops syncing. To delete your account and everything
+          synced to it, see{" "}
+          <Link
+            href="/delete-account"
+            className="text-accent underline underline-offset-2"
+          >
+            deleting your account and data
+          </Link>
+          .
         </p>
       </Section>
 
@@ -91,14 +99,14 @@ export default function PrivacyPage() {
         <p>
           If a support option is shown and you choose to chip in, the payment
           happens on Stripe&apos;s own site under Stripe&apos;s privacy
-          policy. BikeFit
+          policy. SportFits
           never sees your card details and does not record who gave.
         </p>
       </Section>
 
       <Section title="Questions">
         <p>
-          BikeFit&apos;s code is public, so these claims are checkable.
+          SportFits&apos;s code is public, so these claims are checkable.
           Questions or concerns are welcome on the project&apos;s GitHub
           page:{" "}
           <a
@@ -119,7 +127,7 @@ export default function PrivacyPage() {
 
       <footer className="border-t border-line pt-6 text-sm text-ink-muted">
         <Link href="/" className="underline underline-offset-2 hover:text-ink">
-          Back to BikeFit
+          Back to SportFits
         </Link>
       </footer>
     </article>
